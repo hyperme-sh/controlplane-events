@@ -10,13 +10,19 @@ from controlplane_events.payloads.sociacl_events import (
     SociaclShareCreatedPayload,
     SociaclShareResolvedPayload,
 )
+from controlplane_events.payloads.payment_events import (
+    BudgetAllocatedPayload,
+    PaymentSucceededPayload,
+)
 from controlplane_events.payloads.user_created import UserCreatedEvent
 
 __all__ = [
     "AclPolicyUpdatedPayload",
     "AuthLoginSuccessPayload",
     "AuthTokenIssuedPayload",
+    "BudgetAllocatedPayload",
     "GroupMemberAddedPayload",
+    "PaymentSucceededPayload",
     "SociaclAccessDecidedPayload",
     "SociaclRecoverySessionPayload",
     "SociaclShareCreatedPayload",
