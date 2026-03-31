@@ -5,6 +5,7 @@ from controlplane_events.envelope import ControlPlaneEventEnvelope
 from controlplane_events.payloads import (
     AuthLoginSuccessPayload,
     AuthTokenIssuedPayload,
+    GroupMemberAddedPayload,
     UserCreatedEvent,
 )
 from controlplane_events.producer import AioKafkaEventProducer
@@ -15,6 +16,7 @@ __all__ = [
     "AioKafkaEventProducer",
     "AuthLoginSuccessPayload",
     "AuthTokenIssuedPayload",
+    "GroupMemberAddedPayload",
     "CONTROLPLANE_EVENTS_V1",
     "ControlPlaneEventEnvelope",
     "UserCreatedEvent",
