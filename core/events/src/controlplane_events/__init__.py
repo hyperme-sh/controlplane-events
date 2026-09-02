@@ -13,6 +13,7 @@ from controlplane_events.payloads import (
     AuthLoginSuccessPayload,
     AuthTokenIssuedPayload,
     GroupMemberAddedPayload,
+    GroupMemberRemovedPayload,
     PaymentSucceededPayload,
     UserCreatedEvent,
 )
@@ -27,6 +28,7 @@ __all__ = [
     "AuthLoginSuccessPayload",
     "AuthTokenIssuedPayload",
     "GroupMemberAddedPayload",
+    "GroupMemberRemovedPayload",
     "PaymentSucceededPayload",
     "CONTROLPLANE_EVENTS_V1",
     "ControlPlaneEventEnvelope",
