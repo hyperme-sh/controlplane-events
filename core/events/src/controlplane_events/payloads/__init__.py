@@ -5,6 +5,7 @@ from controlplane_events.payloads.auth_events import (
 from controlplane_events.payloads.acl_policy_updated import AclPolicyUpdatedPayload
 from controlplane_events.payloads.budget_depleted import BudgetDepletedEvent
 from controlplane_events.payloads.group_member_added import GroupMemberAddedPayload
+from controlplane_events.payloads.group_member_removed import GroupMemberRemovedPayload
 from controlplane_events.payloads.listing_created import ListingCreatedEvent
 from controlplane_events.payloads.sociacl_events import (
     SociaclAccessDecidedPayload,
@@ -27,6 +28,7 @@ __all__ = [
     "AuthTokenIssuedPayload",
     "BudgetAllocatedPayload",
     "GroupMemberAddedPayload",
+    "GroupMemberRemovedPayload",
     "ListingCreatedEvent",
     "PaymentSucceededPayload",
     "PurchaseCompletedEvent",
