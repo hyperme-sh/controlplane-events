@@ -18,6 +18,39 @@ logger = logging.getLogger(__name__)
 Handler = Callable[[ControlPlaneEventEnvelope, Any], Awaitable[None]]
 
 
+async def dispatch_controlplane_envelope(
+    value: bytes | None,
+    routes: dict[str, tuple[type[BaseModel], Handler]],
+) -> None:
+    """Parse one controlplane.events.v1 envelope and run the matching handler."""
+
+    envelope = parse_envelope_bytes(value)
+    if envelope is None:
+        return
+    route = routes.get(envelope.event_type)
+    if route is None:
+        return
+    model_cls, handler = route
+    try:
+        typed = model_cls.model_validate(envelope.payload)
+    except ValidationError:
+        logger.warning(
+            "Payload validation failed for event_type=%s",
+            envelope.event_type,
+            exc_info=False,
+        )
+        return
+    if not payload_matches_envelope_tenant(envelope, typed):
+        logger.warning(
+            "Skipping event due to tenant mismatch: event_type=%s envelope=%s payload_tenant=%s",
+            envelope.event_type,
+            envelope.tenant_id,
+            getattr(typed, "tenant_id", None),
+        )
+        return
+    await handler(envelope, typed)
+
+
 class RoutingControlPlaneConsumer(AioKafkaEventConsumerBase):
     """
     Parses JSON envelopes, validates payload with Pydantic, checks tenant_id,
@@ -51,28 +84,4 @@ class RoutingControlPlaneConsumer(AioKafkaEventConsumerBase):
         headers: dict[str, bytes],
     ) -> None:
         _ = key, headers
-        envelope = parse_envelope_bytes(value)
-        if envelope is None:
-            return
-        route = self._routes.get(envelope.event_type)
-        if route is None:
-            return
-        model_cls, handler = route
-        try:
-            typed = model_cls.model_validate(envelope.payload)
-        except ValidationError:
-            logger.warning(
-                "Payload validation failed for event_type=%s",
-                envelope.event_type,
-                exc_info=False,
-            )
-            return
-        if not payload_matches_envelope_tenant(envelope, typed):
-            logger.warning(
-                "Skipping event due to tenant mismatch: event_type=%s envelope=%s payload_tenant=%s",
-                envelope.event_type,
-                envelope.tenant_id,
-                getattr(typed, "tenant_id", None),
-            )
-            return
-        await handler(envelope, typed)
+        await dispatch_controlplane_envelope(value, self._routes)

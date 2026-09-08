@@ -18,7 +18,10 @@ from controlplane_events.payloads import (
     UserCreatedEvent,
 )
 from controlplane_events.producer import AioKafkaEventProducer
-from controlplane_events.routing_consumer import RoutingControlPlaneConsumer
+from controlplane_events.routing_consumer import (
+    RoutingControlPlaneConsumer,
+    dispatch_controlplane_envelope,
+)
 from controlplane_events.topics import CONTROLPLANE_EVENTS_V1
 
 __all__ = [
@@ -33,6 +36,7 @@ __all__ = [
     "CONTROLPLANE_EVENTS_V1",
     "ControlPlaneEventEnvelope",
     "RoutingControlPlaneConsumer",
+    "dispatch_controlplane_envelope",
     "UserCreatedEvent",
     "extract_payload_tenant_id",
     "parse_envelope_bytes",
