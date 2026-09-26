@@ -19,7 +19,7 @@ def parse_envelope_bytes(value: bytes | None) -> ControlPlaneEventEnvelope | Non
     try:
         data: Any = json.loads(value.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as e:
-        logger.warning("Invalid Kafka message JSON: %s", e)
+        logger.warning("Invalid event message JSON: %s", e)
         return None
     try:
         return ControlPlaneEventEnvelope.model_validate(data)
