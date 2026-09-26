@@ -27,9 +27,14 @@ class ControlPlaneEventEnvelope(BaseModel):
         description="Optional trace id (stringified UUID recommended)",
     )
     payload: dict[str, Any] = Field(default_factory=dict)
+    bus_event_id: int | None = Field(
+        default=None,
+        exclude=True,
+        description="controlplane_events.id for this delivery. Set by the poller, not stored in the row JSON.",
+    )
 
-    def kafka_headers(self) -> list[tuple[str, bytes]]:
-        """Duplicate key fields for cheap routing without JSON parse."""
+    def transport_headers(self) -> list[tuple[str, bytes]]:
+        """Duplicate key fields for a transport that can route without a JSON parse."""
         h: list[tuple[str, bytes]] = [
             ("event_type", self.event_type.encode("utf-8")),
             ("service", self.service.encode("utf-8")),

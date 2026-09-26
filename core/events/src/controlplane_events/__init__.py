@@ -1,6 +1,5 @@
-"""Kafka event envelopes and aiokafka helpers for the control plane."""
+"""Postgres event log and envelope helpers for the control plane."""
 
-from controlplane_events.consumer import AioKafkaEventConsumerBase
 from controlplane_events.envelope import ControlPlaneEventEnvelope
 from controlplane_events.envelope_parse import (
     extract_payload_tenant_id,
@@ -17,7 +16,11 @@ from controlplane_events.payloads import (
     PaymentSucceededPayload,
     UserCreatedEvent,
 )
-from controlplane_events.producer import AioKafkaEventProducer
+from controlplane_events.publisher import (
+    PostgresEventPublisher,
+    bind_outbox_session,
+    refuse_forbidden_payload,
+)
 from controlplane_events.routing_consumer import (
     RoutingControlPlaneConsumer,
     dispatch_controlplane_envelope,
@@ -26,8 +29,6 @@ from controlplane_events.topics import CONTROLPLANE_EVENTS_V1
 
 __all__ = [
     "AclPolicyUpdatedPayload",
-    "AioKafkaEventConsumerBase",
-    "AioKafkaEventProducer",
     "AuthLoginSuccessPayload",
     "AuthTokenIssuedPayload",
     "GroupMemberAddedPayload",
@@ -35,11 +36,14 @@ __all__ = [
     "PaymentSucceededPayload",
     "CONTROLPLANE_EVENTS_V1",
     "ControlPlaneEventEnvelope",
+    "PostgresEventPublisher",
     "RoutingControlPlaneConsumer",
-    "dispatch_controlplane_envelope",
     "UserCreatedEvent",
+    "bind_outbox_session",
+    "dispatch_controlplane_envelope",
     "extract_payload_tenant_id",
     "parse_envelope_bytes",
     "payload_matches_envelope_tenant",
+    "refuse_forbidden_payload",
     "tenant_ids_consistent",
 ]
