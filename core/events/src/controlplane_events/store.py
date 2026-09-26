@@ -1,4 +1,4 @@
-"""SQL for the Postgres event log. Schema lives in Alembic 0045."""
+"""SQL for the Postgres event log. Schema lives in Alembic 0046."""
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ def asyncpg_dsn(url: str) -> str:
 
 
 async def prune_events(engine: AsyncEngine, retention: str = "30 days") -> int:
-    """Delete retained events. See prune_controlplane_events in migration 0045."""
+    """Delete retained events. See prune_controlplane_events in migration 0046."""
 
     async with engine.begin() as conn:
         row = (

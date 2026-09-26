@@ -9,7 +9,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
-from sqlalchemy import text
+from sqlalchemy import BigInteger, bindparam, text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from controlplane_events.envelope import ControlPlaneEventEnvelope
@@ -28,12 +29,16 @@ Handler = Callable[[ControlPlaneEventEnvelope, Any], Awaitable[None]]
 async def dispatch_controlplane_envelope(
     value: bytes | None,
     routes: dict[str, tuple[type[BaseModel], Handler]],
+    *,
+    bus_event_id: int | None = None,
 ) -> None:
     """Parse one controlplane.events.v1 envelope and run the matching handler."""
 
     envelope = parse_envelope_bytes(value)
     if envelope is None:
         return
+    if bus_event_id is not None:
+        envelope.bus_event_id = bus_event_id
     route = routes.get(envelope.event_type)
     if route is None:
         return
@@ -106,7 +111,7 @@ class RoutingControlPlaneConsumer:
         self._listen_task: asyncio.Task[None] | None = None
         self._stop = asyncio.Event()
         self._wakeup = asyncio.Event()
-        self._cursor_ready = False
+        self._registered = False
 
     async def handle_message(
         self,
@@ -127,7 +132,7 @@ class RoutingControlPlaneConsumer:
             normalize_async_url(self._database_url),
             pool_pre_ping=True,
         )
-        self._cursor_ready = False
+        self._registered = False
         self._stop.clear()
         self._listen_task = asyncio.create_task(self._listen())
         self._task = asyncio.create_task(self._run_loop())
@@ -155,42 +160,68 @@ class RoutingControlPlaneConsumer:
             self._engine = None
         logger.info("Postgres event consumer stopped group=%s", self._group_id)
 
-    async def _ensure_cursor(self) -> None:
-        """Create the group cursor once. ``latest`` must win before fan-out."""
+    async def _ensure_registered(self) -> None:
+        """Register this group's event types once. ``earliest`` backfills committed rows."""
 
-        if self._cursor_ready:
+        if self._registered:
             return
         assert self._engine is not None
+        if not self._routes:
+            self._registered = True
+            return
+        event_types = ",".join(sorted(self._routes))
         async with self._engine.begin() as conn:
             await conn.execute(
-                text("SELECT ensure_controlplane_event_cursor(:group, :mode)"),
-                {"group": self._group_id, "mode": self._auto_offset_reset},
+                text(
+                    """
+                    SELECT register_controlplane_event_consumer(
+                        :group, string_to_array(:types, ','), :mode, :max_attempts
+                    )
+                    """
+                ),
+                {
+                    "group": self._group_id,
+                    "types": event_types,
+                    "mode": self._auto_offset_reset,
+                    "max_attempts": self._max_attempts,
+                },
             )
-        self._cursor_ready = True
+        self._registered = True
+
+    def _handler_timeout_s(self) -> float:
+        """Stay inside the claim lease so a slow handler is failed before reclaim."""
+
+        return max(1.0, float(self._lease_seconds) - 5.0)
 
     async def poll_once(self) -> int:
-        """Fan out, claim a batch, dispatch. Returns how many handlers ran."""
+        """Register, then claim and handle one row at a time. Returns handlers that acked."""
 
         if self._engine is None:
             self._engine = create_async_engine(
                 normalize_async_url(self._database_url),
                 pool_pre_ping=True,
             )
-        await self._ensure_cursor()
-        async with self._engine.begin() as conn:
-            await conn.execute(
-                text("SELECT fanout_controlplane_event_deliveries(:group, :max_attempts)"),
-                {"group": self._group_id, "max_attempts": self._max_attempts},
-            )
-        claimed = await self._claim()
+        await self._ensure_registered()
         handled = 0
-        for row in claimed:
+        # A row failed in this pass must not be claimed again before the next poll,
+        # even when retry backoff is zero.
+        touched: list[int] = []
+        for _ in range(max(1, self._batch_size)):
+            claimed = await self._claim(limit=1, exclude_ids=touched)
+            if not claimed:
+                break
+            row = claimed[0]
             event_id = int(row["event_id"])
+            touched.append(event_id)
             attempts = int(row["attempts"])
             try:
-                await dispatch_controlplane_envelope(
-                    envelope_to_bytes(row["envelope"]),
-                    self._routes,
+                await asyncio.wait_for(
+                    dispatch_controlplane_envelope(
+                        envelope_to_bytes(row["envelope"]),
+                        self._routes,
+                        bus_event_id=event_id,
+                    ),
+                    timeout=self._handler_timeout_s(),
                 )
             except Exception as exc:
                 logger.exception(
@@ -206,33 +237,35 @@ class RoutingControlPlaneConsumer:
         return handled
 
     async def reset_cursor(self, last_event_id: int = 0) -> None:
-        """Replay deliveries with event_id greater than last_event_id."""
+        """Requeue deliveries with event_id greater than last_event_id."""
 
         if self._engine is None:
             raise RuntimeError("Consumer engine is not open")
         async with self._engine.begin() as conn:
             await conn.execute(
-                text("SELECT reset_controlplane_event_cursor(:group, :last_id)"),
+                text("SELECT replay_controlplane_event_deliveries(:group, :last_id)"),
                 {"group": self._group_id, "last_id": last_event_id},
             )
 
-    async def _claim(self) -> list[Any]:
+    async def _claim(self, *, limit: int = 1, exclude_ids: list[int] | None = None) -> list[Any]:
         assert self._engine is not None
+        exclude = [int(event_id) for event_id in (exclude_ids or [])]
         async with self._engine.begin() as conn:
             result = await conn.execute(
                 text(
                     """
                     SELECT event_id, attempts, envelope
                     FROM claim_controlplane_event_deliveries(
-                        :group, :worker, :limit, :lease
+                        :group, :worker, :limit, :lease, :exclude
                     )
                     """
-                ),
+                ).bindparams(bindparam("exclude", type_=ARRAY(BigInteger))),
                 {
                     "group": self._group_id,
                     "worker": self._worker_id,
-                    "limit": self._batch_size,
+                    "limit": limit,
                     "lease": self._lease_seconds,
+                    "exclude": exclude,
                 },
             )
             return list(result.mappings().all())
@@ -240,7 +273,7 @@ class RoutingControlPlaneConsumer:
     async def _ack(self, event_id: int) -> None:
         assert self._engine is not None
         async with self._engine.begin() as conn:
-            await conn.execute(
+            result = await conn.execute(
                 text(
                     """
                     UPDATE controlplane_event_deliveries
@@ -262,13 +295,20 @@ class RoutingControlPlaneConsumer:
                     "worker": self._worker_id,
                 },
             )
+        if result.rowcount == 0:
+            logger.warning(
+                "ack matched 0 rows group=%s event_id=%s worker=%s",
+                self._group_id,
+                event_id,
+                self._worker_id,
+            )
 
     async def _fail(self, event_id: int, attempts: int, exc: BaseException) -> None:
         assert self._engine is not None
         delay = backoff_seconds(attempts, fixed=self._retry_backoff_s)
         error = f"{type(exc).__name__}: {exc}"[:2000]
         async with self._engine.begin() as conn:
-            await conn.execute(
+            result = await conn.execute(
                 text(
                     """
                     UPDATE controlplane_event_deliveries
@@ -298,12 +338,19 @@ class RoutingControlPlaneConsumer:
                     "error": error,
                 },
             )
+        if result.rowcount == 0:
+            logger.warning(
+                "fail matched 0 rows group=%s event_id=%s worker=%s",
+                self._group_id,
+                event_id,
+                self._worker_id,
+            )
 
     async def _run_loop(self) -> None:
         try:
             while not self._stop.is_set():
                 try:
-                    await self._ensure_cursor()
+                    await self._ensure_registered()
                     await self.poll_once()
                 except Exception:
                     logger.exception("event poll failed group=%s", self._group_id)
@@ -316,32 +363,48 @@ class RoutingControlPlaneConsumer:
             raise
 
     async def _listen(self) -> None:
-        """Wake the poller on NOTIFY. Polling continues if LISTEN cannot connect."""
+        """Wake the poller on NOTIFY. Reconnect with backoff; polling continues meanwhile."""
 
         try:
             import asyncpg
         except ImportError:
             logger.info("asyncpg missing; event consumer will poll only")
             return
-        try:
-            conn = await asyncpg.connect(asyncpg_dsn(self._database_url))
-        except Exception:
-            logger.warning(
-                "LISTEN %s unavailable; polling every %ss",
-                "controlplane_events",
-                self._poll_interval_s,
-                exc_info=True,
-            )
-            return
 
         def _on_notify(*_args: object) -> None:
             self._wakeup.set()
 
-        await conn.add_listener("controlplane_events", _on_notify)
-        try:
-            while not self._stop.is_set():
-                await asyncio.sleep(self._poll_interval_s)
-        except asyncio.CancelledError:
-            raise
-        finally:
-            await conn.close()
+        delay = 1.0
+        while not self._stop.is_set():
+            conn = None
+            try:
+                conn = await asyncpg.connect(asyncpg_dsn(self._database_url))
+                delay = 1.0
+                await conn.add_listener("controlplane_events", _on_notify)
+                while not self._stop.is_set():
+                    if getattr(conn, "is_closed", lambda: False)():
+                        break
+                    await asyncio.sleep(self._poll_interval_s)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.warning(
+                    "LISTEN %s dropped; retry in %.0fs (poll every %ss)",
+                    "controlplane_events",
+                    delay,
+                    self._poll_interval_s,
+                    exc_info=True,
+                )
+            finally:
+                if conn is not None:
+                    try:
+                        await conn.close()
+                    except Exception:
+                        logger.debug("LISTEN connection close failed", exc_info=True)
+            if self._stop.is_set():
+                return
+            try:
+                await asyncio.wait_for(self._stop.wait(), timeout=delay)
+            except TimeoutError:
+                pass
+            delay = min(delay * 2, 30.0)
