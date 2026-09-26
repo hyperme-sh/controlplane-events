@@ -106,6 +106,7 @@ class RoutingControlPlaneConsumer:
         self._listen_task: asyncio.Task[None] | None = None
         self._stop = asyncio.Event()
         self._wakeup = asyncio.Event()
+        self._cursor_ready = False
 
     async def handle_message(
         self,
@@ -126,11 +127,7 @@ class RoutingControlPlaneConsumer:
             normalize_async_url(self._database_url),
             pool_pre_ping=True,
         )
-        async with self._engine.begin() as conn:
-            await conn.execute(
-                text("SELECT ensure_controlplane_event_cursor(:group, :mode)"),
-                {"group": self._group_id, "mode": self._auto_offset_reset},
-            )
+        self._cursor_ready = False
         self._stop.clear()
         self._listen_task = asyncio.create_task(self._listen())
         self._task = asyncio.create_task(self._run_loop())
@@ -158,6 +155,19 @@ class RoutingControlPlaneConsumer:
             self._engine = None
         logger.info("Postgres event consumer stopped group=%s", self._group_id)
 
+    async def _ensure_cursor(self) -> None:
+        """Create the group cursor once. ``latest`` must win before fan-out."""
+
+        if self._cursor_ready:
+            return
+        assert self._engine is not None
+        async with self._engine.begin() as conn:
+            await conn.execute(
+                text("SELECT ensure_controlplane_event_cursor(:group, :mode)"),
+                {"group": self._group_id, "mode": self._auto_offset_reset},
+            )
+        self._cursor_ready = True
+
     async def poll_once(self) -> int:
         """Fan out, claim a batch, dispatch. Returns how many handlers ran."""
 
@@ -166,6 +176,7 @@ class RoutingControlPlaneConsumer:
                 normalize_async_url(self._database_url),
                 pool_pre_ping=True,
             )
+        await self._ensure_cursor()
         async with self._engine.begin() as conn:
             await conn.execute(
                 text("SELECT fanout_controlplane_event_deliveries(:group, :max_attempts)"),
@@ -292,6 +303,7 @@ class RoutingControlPlaneConsumer:
         try:
             while not self._stop.is_set():
                 try:
+                    await self._ensure_cursor()
                     await self.poll_once()
                 except Exception:
                     logger.exception("event poll failed group=%s", self._group_id)
