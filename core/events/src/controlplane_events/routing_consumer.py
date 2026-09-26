@@ -26,6 +26,25 @@ logger = logging.getLogger(__name__)
 Handler = Callable[[ControlPlaneEventEnvelope, Any], Awaitable[None]]
 
 
+def _is_registration_lock_timeout(exc: BaseException) -> bool:
+    """True when registration's SHARE lock hit ``lock_timeout`` (SQLSTATE 55P03)."""
+
+    pending: list[BaseException] = [exc]
+    seen: set[int] = set()
+    while pending:
+        current = pending.pop()
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        code = getattr(current, "sqlstate", None) or getattr(current, "pgcode", None)
+        if code == "55P03" or "lock timeout" in str(current).lower():
+            return True
+        for nxt in (getattr(current, "orig", None), current.__cause__, current.__context__):
+            if isinstance(nxt, BaseException):
+                pending.append(nxt)
+    return False
+
+
 async def dispatch_controlplane_envelope(
     value: bytes | None,
     routes: dict[str, tuple[type[BaseModel], Handler]],
@@ -160,33 +179,43 @@ class RoutingControlPlaneConsumer:
             self._engine = None
         logger.info("Postgres event consumer stopped group=%s", self._group_id)
 
-    async def _ensure_registered(self) -> None:
-        """Register this group's event types once. ``earliest`` backfills committed rows."""
+    async def _ensure_registered(self) -> bool:
+        """Register this group's event types once. ``earliest`` backfills committed rows.
+
+        False means the SHARE lock timed out. The caller retries on the next poll.
+        """
 
         if self._registered:
-            return
+            return True
         assert self._engine is not None
         if not self._routes:
             self._registered = True
-            return
+            return True
         event_types = ",".join(sorted(self._routes))
-        async with self._engine.begin() as conn:
-            await conn.execute(
-                text(
-                    """
-                    SELECT register_controlplane_event_consumer(
-                        :group, string_to_array(:types, ','), :mode, :max_attempts
-                    )
-                    """
-                ),
-                {
-                    "group": self._group_id,
-                    "types": event_types,
-                    "mode": self._auto_offset_reset,
-                    "max_attempts": self._max_attempts,
-                },
-            )
+        try:
+            async with self._engine.begin() as conn:
+                await conn.execute(
+                    text(
+                        """
+                        SELECT register_controlplane_event_consumer(
+                            :group, string_to_array(:types, ','), :mode, :max_attempts
+                        )
+                        """
+                    ),
+                    {
+                        "group": self._group_id,
+                        "types": event_types,
+                        "mode": self._auto_offset_reset,
+                        "max_attempts": self._max_attempts,
+                    },
+                )
+        except Exception as exc:
+            if _is_registration_lock_timeout(exc):
+                logger.warning("registration lock busy; retrying next poll")
+                return False
+            raise
         self._registered = True
+        return True
 
     def _handler_timeout_s(self) -> float:
         """Stay inside the claim lease so a slow handler is failed before reclaim."""
@@ -201,7 +230,8 @@ class RoutingControlPlaneConsumer:
                 normalize_async_url(self._database_url),
                 pool_pre_ping=True,
             )
-        await self._ensure_registered()
+        if not await self._ensure_registered():
+            return 0
         handled = 0
         # A row failed in this pass must not be claimed again before the next poll,
         # even when retry backoff is zero.
@@ -350,8 +380,8 @@ class RoutingControlPlaneConsumer:
         try:
             while not self._stop.is_set():
                 try:
-                    await self._ensure_registered()
-                    await self.poll_once()
+                    if await self._ensure_registered():
+                        await self.poll_once()
                 except Exception:
                     logger.exception("event poll failed group=%s", self._group_id)
                 self._wakeup.clear()
