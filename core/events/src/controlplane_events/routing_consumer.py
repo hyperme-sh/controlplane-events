@@ -112,6 +112,7 @@ class RoutingControlPlaneConsumer:
         batch_size: int = 16,
         retry_backoff_s: float | None = None,
         worker_id: str | None = None,
+        engine: AsyncEngine | None = None,
     ) -> None:
         self._database_url = database_url
         self._topics = topics or [CONTROLPLANE_EVENTS_V1]
@@ -125,7 +126,9 @@ class RoutingControlPlaneConsumer:
         self._batch_size = batch_size
         self._retry_backoff_s = retry_backoff_s
         self._worker_id = worker_id or f"{client_id}-{uuid.uuid4().hex[:8]}"
-        self._engine: AsyncEngine | None = None
+        # A borrowed engine belongs to the caller. stop() must not dispose it.
+        self._engine: AsyncEngine | None = engine
+        self._owns_engine = engine is None
         self._task: asyncio.Task[None] | None = None
         self._listen_task: asyncio.Task[None] | None = None
         self._stop = asyncio.Event()
@@ -147,10 +150,12 @@ class RoutingControlPlaneConsumer:
     async def start(self) -> None:
         if self._task is not None:
             return
-        self._engine = create_async_engine(
-            normalize_async_url(self._database_url),
-            pool_pre_ping=True,
-        )
+        if self._engine is None:
+            self._engine = create_async_engine(
+                normalize_async_url(self._database_url),
+                pool_pre_ping=True,
+            )
+            self._owns_engine = True
         self._registered = False
         self._stop.clear()
         self._listen_task = asyncio.create_task(self._listen())
@@ -174,7 +179,7 @@ class RoutingControlPlaneConsumer:
                 pass
         self._task = None
         self._listen_task = None
-        if self._engine is not None:
+        if self._owns_engine and self._engine is not None:
             await self._engine.dispose()
             self._engine = None
         logger.info("Postgres event consumer stopped group=%s", self._group_id)
@@ -230,6 +235,7 @@ class RoutingControlPlaneConsumer:
                 normalize_async_url(self._database_url),
                 pool_pre_ping=True,
             )
+            self._owns_engine = True
         if not await self._ensure_registered():
             return 0
         handled = 0
