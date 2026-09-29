@@ -6,6 +6,8 @@ Typed envelopes, payloads, and the shared event store for `controlplane.events.v
 ## Public interface
 The exact public Python modules are the `controlplane_events` entries in [`scripts/import_boundaries.json`](../../scripts/import_boundaries.json).
 The contract is exact-module based, not permission to import every descendant.
+Declared modules: `controlplane_events`, `controlplane_events.envelope`,
+`controlplane_events.payloads.payment_events`, `controlplane_events.store`.
 
 ## Source of truth
 Start with [../../Design.md](../../Design.md) and the package's source/tests. Repository dependency policy: [../../AGENTS.md](../../AGENTS.md).
