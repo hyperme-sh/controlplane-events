@@ -1,0 +1,132 @@
+{
+  "$id": "urn:controlplane:event:payment.succeeded.v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Reserved v2 contract; producer rollout belongs to the payment packages.",
+  "else": {
+    "properties": {
+      "billing_subdivision": {
+        "type": "null"
+      }
+    }
+  },
+  "if": {
+    "properties": {
+      "billing_country": {
+        "const": "US"
+      }
+    }
+  },
+  "properties": {
+    "amount_cents": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Amount Cents"
+    },
+    "billing_country": {
+      "pattern": "^[A-Z]{2}$",
+      "title": "Billing Country",
+      "type": "string"
+    },
+    "billing_record_id": {
+      "format": "uuid",
+      "title": "Billing Record Id",
+      "type": "string"
+    },
+    "billing_subdivision": {
+      "anyOf": [
+        {
+          "pattern": "^US-[A-Z]{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Billing Subdivision"
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "maxLength": 8,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Currency"
+    },
+    "stripe_payment_intent_id": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stripe Payment Intent Id"
+    },
+    "stripe_session_id": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stripe Session Id"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "user_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "User Id"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "billing_record_id",
+    "billing_country",
+    "billing_subdivision"
+  ],
+  "then": {
+    "properties": {
+      "billing_subdivision": {
+        "type": "string"
+      }
+    }
+  },
+  "title": "PaymentSucceededV2Payload",
+  "type": "object",
+  "x-event-type": "payment.succeeded.v2",
+  "x-owner": "payment-service",
+  "x-topic": "controlplane.events.v1"
+}

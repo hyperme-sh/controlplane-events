@@ -198,6 +198,11 @@
       "schema": "payment.succeeded.v1.json",
       "status": "existing"
     },
+    "payment.succeeded.v2": {
+      "owner": "payment-service",
+      "schema": "payment.succeeded.v2.json",
+      "status": "reserved"
+    },
     "purchase.completed.v1": {
       "owner": "marketplace-service",
       "schema": "purchase.completed.v1.json",
