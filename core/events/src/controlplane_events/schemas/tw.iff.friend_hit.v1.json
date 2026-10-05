@@ -1,0 +1,102 @@
+{
+  "$id": "urn:controlplane:event:tw.iff.friend_hit.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "beacon_uid": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Beacon Uid",
+      "type": "string"
+    },
+    "callsign": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Callsign"
+    },
+    "hit_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "interrogator_id_handle": {
+      "anyOf": [
+        {
+          "maxLength": 6,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Interrogator Id Handle"
+    },
+    "interrogator_known": {
+      "default": false,
+      "title": "Interrogator Known",
+      "type": "boolean"
+    },
+    "mission_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mission Id"
+    },
+    "protocol_version": {
+      "default": "0.1.0",
+      "maxLength": 32,
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "target_id_handle": {
+      "anyOf": [
+        {
+          "maxLength": 6,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Id Handle"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "hit_id",
+    "tenant_id",
+    "mission_id",
+    "beacon_uid",
+    "callsign",
+    "target_id_handle",
+    "interrogator_known",
+    "interrogator_id_handle",
+    "protocol_version"
+  ],
+  "type": "object",
+  "x-event-type": "tw.iff.friend_hit.v1",
+  "x-owner": "tennessee-windage",
+  "x-serializer-sha256": "4cab2a9c4ff96006e2804bf5faa21235b57901fa86202d8a8893af98650141fc",
+  "x-topic": "controlplane.events.v1"
+}

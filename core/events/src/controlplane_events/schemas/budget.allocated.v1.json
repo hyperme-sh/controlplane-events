@@ -1,0 +1,55 @@
+{
+  "$id": "urn:controlplane:event:budget.allocated.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "budget.allocated.v1",
+  "properties": {
+    "allocated_after": {
+      "title": "Allocated After",
+      "type": "integer"
+    },
+    "budget_id": {
+      "format": "uuid",
+      "title": "Budget Id",
+      "type": "string"
+    },
+    "ceiling_lamports": {
+      "title": "Ceiling Lamports",
+      "type": "integer"
+    },
+    "delta_lamports": {
+      "title": "Delta Lamports",
+      "type": "integer"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "user_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "User Id"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "budget_id",
+    "delta_lamports",
+    "allocated_after",
+    "ceiling_lamports"
+  ],
+  "title": "BudgetAllocatedPayload",
+  "type": "object",
+  "x-event-type": "budget.allocated.v1",
+  "x-owner": "payment-service",
+  "x-topic": "controlplane.events.v1"
+}

@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "ViolationAction": {
+      "enum": [
+        "suspend",
+        "stop",
+        "refund"
+      ],
+      "title": "ViolationAction",
+      "type": "string"
+    },
+    "ViolationKind": {
+      "enum": [
+        "term",
+        "cert_fail",
+        "policy_deny",
+        "abuse"
+      ],
+      "title": "ViolationKind",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.contract.violated.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/ViolationAction"
+    },
+    "contract_id": {
+      "format": "uuid",
+      "title": "Contract Id",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ViolationKind"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "contract_id",
+    "lease_id",
+    "kind",
+    "action",
+    "reason"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.contract.violated.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "e3610aaaafaa1570b12d494e58bfd6565b35345bc73e3c40fa2eb746af97cd6b",
+  "x-topic": "controlplane.events.v1"
+}

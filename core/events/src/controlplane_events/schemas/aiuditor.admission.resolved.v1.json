@@ -1,0 +1,188 @@
+{
+  "$defs": {
+    "AdmissionStatus": {
+      "enum": [
+        "pending",
+        "quarantined",
+        "sandboxing",
+        "hold",
+        "allowed",
+        "denied"
+      ],
+      "title": "AdmissionStatus",
+      "type": "string"
+    },
+    "AdmissionVerdict": {
+      "enum": [
+        "allow",
+        "deny"
+      ],
+      "title": "AdmissionVerdict",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.admission.resolved.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "credential_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Credential Ref"
+    },
+    "file_hash": {
+      "title": "File Hash",
+      "type": "string"
+    },
+    "format": {
+      "title": "Format",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "intended_class": {
+      "title": "Intended Class",
+      "type": "string"
+    },
+    "license": {
+      "title": "License",
+      "type": "string"
+    },
+    "quant": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quant"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason"
+    },
+    "resolved_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resolved By"
+    },
+    "sandbox_egress_ok": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sandbox Egress Ok"
+    },
+    "sandbox_egress_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sandbox Egress Reason"
+    },
+    "sandbox_soak_ok": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sandbox Soak Ok"
+    },
+    "size_bytes": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Size Bytes"
+    },
+    "status": {
+      "$ref": "#/$defs/AdmissionStatus"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "verdict": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AdmissionVerdict"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "file_hash",
+    "format",
+    "quant",
+    "license",
+    "intended_class",
+    "credential_ref",
+    "status",
+    "verdict",
+    "reason",
+    "resolved_by",
+    "size_bytes",
+    "sandbox_soak_ok",
+    "sandbox_egress_ok",
+    "sandbox_egress_reason"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.admission.resolved.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "a20c764ab1acf6e055663cd90f2ad751d811e24e2560a1367b41c1646e577b51",
+  "x-topic": "controlplane.events.v1"
+}

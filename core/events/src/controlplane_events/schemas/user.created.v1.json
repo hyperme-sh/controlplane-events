@@ -1,0 +1,53 @@
+{
+  "$id": "urn:controlplane:event:user.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed payload for user.created.v1 (maps to ControlPlaneEventEnvelope.payload).",
+  "properties": {
+    "display_name": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Display Name"
+    },
+    "email": {
+      "format": "email",
+      "title": "Email",
+      "type": "string"
+    },
+    "tenant_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Stringified tenant UUID or None for platform scope",
+      "title": "Tenant Id"
+    },
+    "user_id": {
+      "format": "uuid",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "email"
+  ],
+  "title": "UserCreatedEvent",
+  "type": "object",
+  "x-event-type": "user.created.v1",
+  "x-owner": "user-service",
+  "x-topic": "controlplane.events.v1"
+}

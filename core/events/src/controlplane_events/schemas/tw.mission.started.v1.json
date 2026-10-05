@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "MissionStatus": {
+      "enum": [
+        "draft",
+        "started",
+        "ended"
+      ],
+      "title": "MissionStatus",
+      "type": "string"
+    },
+    "ResponseMode": {
+      "description": "LightIFF PROTOCOL.md \u00a73.5 / ATAK_IFF_PROTOCOL.md \u00a74.1.",
+      "enum": [
+        "ACTIVE",
+        "SELECTIVE",
+        "MANUAL",
+        "EMCOM",
+        "PASSIVE"
+      ],
+      "title": "ResponseMode",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:tw.mission.started.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "epoch_minutes": {
+      "default": 15,
+      "maximum": 1440,
+      "minimum": 1,
+      "title": "Epoch Minutes",
+      "type": "integer"
+    },
+    "key_epoch": {
+      "default": 0,
+      "maximum": 2147483647,
+      "minimum": 0,
+      "title": "Key Epoch",
+      "type": "integer"
+    },
+    "lethal_challenge_key_ref": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lethal Challenge Key Ref"
+    },
+    "mission_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "network_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Network Id",
+      "type": "string"
+    },
+    "protocol_version": {
+      "default": "0.1.0",
+      "maxLength": 32,
+      "title": "Protocol Version",
+      "type": "string"
+    },
+    "response_mode": {
+      "$ref": "#/$defs/ResponseMode",
+      "default": "SELECTIVE"
+    },
+    "status": {
+      "$ref": "#/$defs/MissionStatus",
+      "default": "draft"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "mission_id",
+    "tenant_id",
+    "name",
+    "network_id",
+    "protocol_version",
+    "key_epoch",
+    "epoch_minutes",
+    "response_mode",
+    "status",
+    "lethal_challenge_key_ref"
+  ],
+  "type": "object",
+  "x-event-type": "tw.mission.started.v1",
+  "x-owner": "tennessee-windage",
+  "x-serializer-sha256": "7c309d50ea6764fc647b44f6bcc0e3031b682267e8151b65b4b864f716868138",
+  "x-topic": "controlplane.events.v1"
+}

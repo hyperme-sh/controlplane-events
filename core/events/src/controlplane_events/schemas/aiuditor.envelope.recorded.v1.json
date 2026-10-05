@@ -1,0 +1,103 @@
+{
+  "$id": "urn:controlplane:event:aiuditor.envelope.recorded.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "catalog_id": {
+      "title": "Catalog Id",
+      "type": "string"
+    },
+    "class_id": {
+      "title": "Class Id",
+      "type": "string"
+    },
+    "context": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Context"
+    },
+    "decode_tok_s": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decode Tok S"
+    },
+    "file_hash": {
+      "title": "File Hash",
+      "type": "string"
+    },
+    "fit": {
+      "title": "Fit",
+      "type": "boolean"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "quant": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quant"
+    },
+    "runtime": {
+      "title": "Runtime",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "thermal_c": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Thermal C"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "class_id",
+    "catalog_id",
+    "file_hash",
+    "quant",
+    "runtime",
+    "context",
+    "fit",
+    "decode_tok_s",
+    "thermal_c"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.envelope.recorded.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "8bb3f7e8b46f51e3dae005eb34614b6b1eb7575c6d26e3411924c4f32b4619fa",
+  "x-topic": "controlplane.events.v1"
+}
