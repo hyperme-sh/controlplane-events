@@ -1,6 +1,7 @@
 {
   "consumer_groups": {
-    "hypermesh.payment.succeeded": "hypermesh-service-controlplane-events"
+    "hypermesh.payment.succeeded": "hypermesh-service-controlplane-events",
+    "payment.hypermesh.payout.due": "payment-service-controlplane-events"
   },
   "events": {
     "acl.policy.updated.v1": {
