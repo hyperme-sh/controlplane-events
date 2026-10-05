@@ -36,3 +36,17 @@ class BudgetAllocatedPayload(BaseModel):
 
     def to_envelope_payload(self) -> dict[str, object]:
         return self.model_dump(mode="json")
+
+
+class PaymentSucceededV2Payload(PaymentSucceededPayload):
+    """Reserved v2 contract; producer rollout belongs to the payment packages."""
+
+    model_config = {"extra": "forbid", "str_strip_whitespace": True,
+                    "json_schema_extra": {
+                        "if": {"properties": {"billing_country": {"const": "US"}}},
+                        "then": {"properties": {"billing_subdivision": {"type": "string"}}},
+                        "else": {"properties": {"billing_subdivision": {"type": "null"}}},
+                    }}
+
+    billing_country: str = Field(..., pattern=r"^[A-Z]{2}$")
+    billing_subdivision: str | None = Field(..., pattern=r"^US-[A-Z]{2}$")

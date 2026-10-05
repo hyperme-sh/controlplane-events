@@ -1,0 +1,58 @@
+{
+  "$id": "urn:controlplane:event:sociacl.share.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "sociacl.share.created.v1 \u2014 no raw token.",
+  "properties": {
+    "actor_sub": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actor Sub"
+    },
+    "mode": {
+      "maxLength": 32,
+      "title": "Mode",
+      "type": "string"
+    },
+    "resource_kind": {
+      "maxLength": 32,
+      "title": "Resource Kind",
+      "type": "string"
+    },
+    "share_id": {
+      "format": "uuid",
+      "title": "Share Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "token_prefix": {
+      "maxLength": 16,
+      "title": "Token Prefix",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "share_id",
+    "mode",
+    "resource_kind",
+    "token_prefix"
+  ],
+  "title": "SociaclShareCreatedPayload",
+  "type": "object",
+  "x-event-type": "sociacl.share.created.v1",
+  "x-owner": "acl-service",
+  "x-topic": "controlplane.events.v1"
+}

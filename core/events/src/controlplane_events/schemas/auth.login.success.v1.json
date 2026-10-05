@@ -1,0 +1,45 @@
+{
+  "$id": "urn:controlplane:event:auth.login.success.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "identity_provider": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Broker IdP alias when using Keycloak identity brokering (e.g. google, microsoft).",
+      "title": "Identity Provider"
+    },
+    "subject": {
+      "title": "Subject",
+      "type": "string"
+    },
+    "tenant_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tenant Id"
+    }
+  },
+  "required": [
+    "subject"
+  ],
+  "title": "AuthLoginSuccessPayload",
+  "type": "object",
+  "x-event-type": "auth.login.success.v1",
+  "x-owner": "auth-service",
+  "x-topic": "controlplane.events.v1"
+}

@@ -1,0 +1,47 @@
+{
+  "$id": "urn:controlplane:event:group.member.added.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Payload for group.member.added.v1.",
+  "properties": {
+    "added_by_user_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Actor from JWT sub when available",
+      "title": "Added By User Id"
+    },
+    "group_id": {
+      "format": "uuid",
+      "title": "Group Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "user_id": {
+      "format": "uuid",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "group_id",
+    "tenant_id"
+  ],
+  "title": "GroupMemberAddedPayload",
+  "type": "object",
+  "x-event-type": "group.member.added.v1",
+  "x-owner": "user-service",
+  "x-topic": "controlplane.events.v1"
+}

@@ -1,0 +1,276 @@
+{
+  "consumer_groups": {
+    "hypermesh.payment.succeeded": "hypermesh-service-controlplane-events"
+  },
+  "events": {
+    "acl.policy.updated.v1": {
+      "owner": "acl-service",
+      "schema": "acl.policy.updated.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.admission.resolved.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.admission.resolved.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.admission.submitted.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.admission.submitted.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.approval.held.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.approval.held.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.approval.resolved.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.approval.resolved.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.catalog.service.allocated.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.catalog.service.allocated.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.catalog.service.created.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.catalog.service.created.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.connection.assigned.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.connection.assigned.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.connection.created.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.connection.created.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.contract.bound.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.bound.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.contract.created.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.created.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.contract.fulfilled.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.fulfilled.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.contract.signed.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.signed.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.contract.violated.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.violated.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.envelope.recorded.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.envelope.recorded.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.policy.created.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.policy.created.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.policy.deleted.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.policy.deleted.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.suite.member.recorded.v1": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.suite.member.recorded.v1.json",
+      "status": "existing"
+    },
+    "allocation.ended.v1": {
+      "owner": "hypermesh",
+      "schema": "allocation.ended.v1.json",
+      "status": "reserved"
+    },
+    "allocation.requested.v1": {
+      "owner": "hypermesh",
+      "schema": "allocation.requested.v1.json",
+      "status": "reserved"
+    },
+    "auth.login.success.v1": {
+      "owner": "auth-service",
+      "schema": "auth.login.success.v1.json",
+      "status": "existing"
+    },
+    "auth.token.issued.v1": {
+      "owner": "auth-service",
+      "schema": "auth.token.issued.v1.json",
+      "status": "existing"
+    },
+    "billing.record.created.v1": {
+      "owner": "platform",
+      "schema": "billing.record.created.v1.json",
+      "status": "existing"
+    },
+    "budget.allocated.v1": {
+      "owner": "payment-service",
+      "schema": "budget.allocated.v1.json",
+      "status": "existing"
+    },
+    "budget.depleted.v1": {
+      "owner": "ai-service",
+      "schema": "budget.depleted.v1.json",
+      "status": "existing"
+    },
+    "group.member.added.v1": {
+      "owner": "user-service",
+      "schema": "group.member.added.v1.json",
+      "status": "existing"
+    },
+    "group.member.removed.v1": {
+      "owner": "user-service",
+      "schema": "group.member.removed.v1.json",
+      "status": "existing"
+    },
+    "host.enrolled.v1": {
+      "owner": "hypermesh",
+      "schema": "host.enrolled.v1.json",
+      "status": "reserved"
+    },
+    "hypermesh.cert.path_b.failed.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.cert.path_b.failed.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.cert.path_b.passed.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.cert.path_b.passed.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.device.deenrolled.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.device.deenrolled.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.device.enrolled.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.device.enrolled.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.instance.check.failed.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.instance.check.failed.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.lease.ended.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.lease.ended.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.lease.failed.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.lease.failed.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.lease.started.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.lease.started.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.payout.due.v1": {
+      "owner": "hypermesh",
+      "schema": "hypermesh.payout.due.v1.json",
+      "status": "existing"
+    },
+    "listing.created.v1": {
+      "owner": "marketplace-service",
+      "schema": "listing.created.v1.json",
+      "status": "existing"
+    },
+    "payment.succeeded.v1": {
+      "owner": "payment-service",
+      "schema": "payment.succeeded.v1.json",
+      "status": "existing"
+    },
+    "payment.succeeded.v2": {
+      "owner": "payment-service",
+      "schema": "payment.succeeded.v2.json",
+      "status": "reserved"
+    },
+    "purchase.completed.v1": {
+      "owner": "marketplace-service",
+      "schema": "purchase.completed.v1.json",
+      "status": "existing"
+    },
+    "sociacl.access.decided.v1": {
+      "owner": "acl-service",
+      "schema": "sociacl.access.decided.v1.json",
+      "status": "existing"
+    },
+    "sociacl.recovery.session.started.v1": {
+      "owner": "acl-service",
+      "schema": "sociacl.recovery.session.started.v1.json",
+      "status": "existing"
+    },
+    "sociacl.share.created.v1": {
+      "owner": "acl-service",
+      "schema": "sociacl.share.created.v1.json",
+      "status": "existing"
+    },
+    "sociacl.share.resolved.v1": {
+      "owner": "acl-service",
+      "schema": "sociacl.share.resolved.v1.json",
+      "status": "existing"
+    },
+    "template.sample.created.v1": {
+      "owner": "template",
+      "schema": "template.sample.created.v1.json",
+      "status": "existing"
+    },
+    "tenant.created.v1": {
+      "owner": "platform",
+      "schema": "tenant.created.v1.json",
+      "status": "existing"
+    },
+    "tokens.used.v1": {
+      "owner": "ai-service",
+      "schema": "tokens.used.v1.json",
+      "status": "existing"
+    },
+    "turn.allocate.v1": {
+      "owner": "turn",
+      "schema": "turn.allocate.v1.json",
+      "status": "existing"
+    },
+    "tw.iff.friend_hit.v1": {
+      "owner": "tennessee-windage",
+      "schema": "tw.iff.friend_hit.v1.json",
+      "status": "existing"
+    },
+    "tw.iff.identity.assigned.v1": {
+      "owner": "tennessee-windage",
+      "schema": "tw.iff.identity.assigned.v1.json",
+      "status": "existing"
+    },
+    "tw.mission.started.v1": {
+      "owner": "tennessee-windage",
+      "schema": "tw.mission.started.v1.json",
+      "status": "existing"
+    },
+    "user.created.v1": {
+      "owner": "user-service",
+      "schema": "user.created.v1.json",
+      "status": "existing"
+    }
+  },
+  "proposed": [
+    "payment.usdc.*"
+  ],
+  "topic": "controlplane.events.v1"
+}

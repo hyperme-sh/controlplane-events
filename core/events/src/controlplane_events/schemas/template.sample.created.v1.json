@@ -1,0 +1,44 @@
+{
+  "$id": "urn:controlplane:event:template.sample.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Tenant-scoped sample row returned by the template router.",
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "note": {
+      "title": "Note",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "name",
+    "note",
+    "created_at"
+  ],
+  "title": "SampleRecord",
+  "type": "object",
+  "x-event-type": "template.sample.created.v1",
+  "x-owner": "template",
+  "x-serializer-sha256": "b221cdeed509feaca5c303fa8ceacd30a5b63501714dea37d4823f5132d6ff66",
+  "x-topic": "controlplane.events.v1"
+}

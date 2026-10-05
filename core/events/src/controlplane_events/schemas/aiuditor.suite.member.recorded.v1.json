@@ -1,0 +1,41 @@
+{
+  "$id": "urn:controlplane:event:aiuditor.suite.member.recorded.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "catalog_id": {
+      "title": "Catalog Id",
+      "type": "string"
+    },
+    "class_id": {
+      "title": "Class Id",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "pack_id": {
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "class_id",
+    "catalog_id",
+    "pack_id"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.suite.member.recorded.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "ef087c8b9176da3df9d2c52580107add5d5b3564504727d687746a8cedc763b0",
+  "x-topic": "controlplane.events.v1"
+}

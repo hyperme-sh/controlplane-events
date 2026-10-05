@@ -1,0 +1,51 @@
+{
+  "$id": "urn:controlplane:event:sociacl.access.decided.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "sociacl.access.decided.v1",
+  "properties": {
+    "actor_sub": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actor Sub"
+    },
+    "decision": {
+      "maxLength": 32,
+      "title": "Decision",
+      "type": "string"
+    },
+    "reason_code": {
+      "maxLength": 64,
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "share_id": {
+      "format": "uuid",
+      "title": "Share Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "share_id",
+    "decision",
+    "reason_code"
+  ],
+  "title": "SociaclAccessDecidedPayload",
+  "type": "object",
+  "x-event-type": "sociacl.access.decided.v1",
+  "x-owner": "acl-service",
+  "x-topic": "controlplane.events.v1"
+}

@@ -1,0 +1,44 @@
+{
+  "$id": "urn:controlplane:event:sociacl.share.resolved.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "sociacl.share.resolved.v1",
+  "properties": {
+    "active": {
+      "title": "Active",
+      "type": "boolean"
+    },
+    "actor_sub": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actor Sub"
+    },
+    "share_id": {
+      "format": "uuid",
+      "title": "Share Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "share_id",
+    "active"
+  ],
+  "title": "SociaclShareResolvedPayload",
+  "type": "object",
+  "x-event-type": "sociacl.share.resolved.v1",
+  "x-owner": "acl-service",
+  "x-topic": "controlplane.events.v1"
+}

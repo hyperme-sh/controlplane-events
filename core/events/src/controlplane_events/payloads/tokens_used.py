@@ -24,7 +24,9 @@ class TokensUsedEvent(BaseModel):
     model: str = Field(..., max_length=256)
     input_tokens: int = Field(..., ge=0)
     output_tokens: int = Field(..., ge=0)
-    cost_usd: Decimal = Field(..., ge=0)
+    cost_usd: Decimal = Field(..., ge=0, json_schema_extra={
+        "pattern": r"^[+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$"
+    })
 
     def to_envelope_payload(self) -> dict[str, object]:
         return self.model_dump(mode="json")
