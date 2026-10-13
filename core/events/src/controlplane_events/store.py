@@ -82,3 +82,23 @@ async def prune_events(engine: AsyncEngine, retention: str = "30 days") -> int:
             )
         ).one()
     return int(row[0])
+
+
+def delivery_counts_sync(connection: Any) -> tuple[int, int]:
+    """Return pending/claimed depth and dead deliveries visible to the caller.
+
+    This read-only aggregate is owned by the event store. The caller owns the
+    connection, transaction, role and timeouts; no tenant scope is widened here.
+    No event, tenant or consumer identifiers leave this interface.
+    """
+    row = connection.execute(
+        text(
+            """
+            SELECT
+              COUNT(*) FILTER (WHERE status IN ('pending', 'claimed')) AS depth,
+              COUNT(*) FILTER (WHERE status = 'dead') AS dead
+            FROM controlplane_event_deliveries
+            """
+        )
+    ).one()
+    return int(row.depth), int(row.dead)
