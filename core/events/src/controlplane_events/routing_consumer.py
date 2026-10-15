@@ -18,7 +18,11 @@ from controlplane_events.envelope_parse import (
     parse_envelope_bytes,
     payload_matches_envelope_tenant,
 )
-from controlplane_events.store import asyncpg_dsn, envelope_to_bytes, normalize_async_url
+from controlplane_events.store import (
+    asyncpg_dsn,
+    envelope_to_bytes,
+    normalize_async_url,
+)
 from controlplane_events.topics import CONTROLPLANE_EVENTS_V1
 
 logger = logging.getLogger(__name__)
@@ -39,7 +43,11 @@ def _is_registration_lock_timeout(exc: BaseException) -> bool:
         code = getattr(current, "sqlstate", None) or getattr(current, "pgcode", None)
         if code == "55P03" or "lock timeout" in str(current).lower():
             return True
-        for nxt in (getattr(current, "orig", None), current.__cause__, current.__context__):
+        for nxt in (
+            getattr(current, "orig", None),
+            current.__cause__,
+            current.__context__,
+        ):
             if isinstance(nxt, BaseException):
                 pending.append(nxt)
     return False
@@ -94,7 +102,9 @@ class RoutingControlPlaneConsumer:
     then dispatches to the handler for event_type.
 
     ``topics`` is accepted so existing call sites stay positional. The log is
-    one table; the topic name is not stored.
+    one table; the topic name is not stored. Optional ``source_service`` filters
+    both historical backfill and future deliveries in the database. A group's
+    filter is immutable; use a new group ID to change it.
     """
 
     def __init__(
@@ -112,7 +122,11 @@ class RoutingControlPlaneConsumer:
         batch_size: int = 16,
         retry_backoff_s: float | None = None,
         worker_id: str | None = None,
+        source_service: str | None = None,
     ) -> None:
+        if source_service is not None and not source_service.strip():
+            raise ValueError("source_service must be nonempty")
+        self._source_service = source_service
         self._database_url = database_url
         self._topics = topics or [CONTROLPLANE_EVENTS_V1]
         self._group_id = group_id
@@ -194,16 +208,19 @@ class RoutingControlPlaneConsumer:
         event_types = ",".join(sorted(self._routes))
         try:
             async with self._engine.begin() as conn:
+                source_argument = (
+                    ", :source" if self._source_service is not None else ""
+                )
                 await conn.execute(
                     text(
-                        """
-                        SELECT register_controlplane_event_consumer(
-                            :group, string_to_array(:types, ','), :mode, :max_attempts
-                        )
-                        """
+                        "SELECT register_controlplane_event_consumer("
+                        ":group, string_to_array(:types, ','), :mode, :max_attempts"
+                        + source_argument
+                        + ")"
                     ),
                     {
                         "group": self._group_id,
+                        "source": self._source_service,
                         "types": event_types,
                         "mode": self._auto_offset_reset,
                         "max_attempts": self._max_attempts,
@@ -277,7 +294,9 @@ class RoutingControlPlaneConsumer:
                 {"group": self._group_id, "last_id": last_event_id},
             )
 
-    async def _claim(self, *, limit: int = 1, exclude_ids: list[int] | None = None) -> list[Any]:
+    async def _claim(
+        self, *, limit: int = 1, exclude_ids: list[int] | None = None
+    ) -> list[Any]:
         assert self._engine is not None
         exclude = [int(event_id) for event_id in (exclude_ids or [])]
         async with self._engine.begin() as conn:
@@ -386,7 +405,9 @@ class RoutingControlPlaneConsumer:
                     logger.exception("event poll failed group=%s", self._group_id)
                 self._wakeup.clear()
                 try:
-                    await asyncio.wait_for(self._wakeup.wait(), timeout=self._poll_interval_s)
+                    await asyncio.wait_for(
+                        self._wakeup.wait(), timeout=self._poll_interval_s
+                    )
                 except TimeoutError:
                     pass
         except asyncio.CancelledError:
