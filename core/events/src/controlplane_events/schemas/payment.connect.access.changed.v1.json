@@ -44,7 +44,8 @@
         "past_due",
         "action_required",
         "due_soon",
-        "upcoming"
+        "upcoming",
+        "provider_pending"
       ],
       "title": "Reason",
       "type": "string"
