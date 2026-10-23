@@ -194,6 +194,11 @@
       "schema": "listing.created.v1.json",
       "status": "existing"
     },
+    "payment.connect.access.changed.v1": {
+      "owner": "payment-service",
+      "schema": "payment.connect.access.changed.v1.json",
+      "status": "existing"
+    },
     "payment.succeeded.v1": {
       "owner": "payment-service",
       "schema": "payment.succeeded.v1.json",

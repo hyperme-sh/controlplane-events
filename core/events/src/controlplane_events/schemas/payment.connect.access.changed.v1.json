@@ -1,0 +1,91 @@
+{
+  "$id": "urn:controlplane:event:payment.connect.access.changed.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "account_id": {
+      "pattern": "^acct_[A-Za-z0-9]+$",
+      "title": "Account Id",
+      "type": "string"
+    },
+    "deadline": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Deadline"
+    },
+    "enrollment_attempt_id": {
+      "format": "uuid",
+      "title": "Enrollment Attempt Id",
+      "type": "string"
+    },
+    "epoch": {
+      "minimum": 1,
+      "title": "Epoch",
+      "type": "integer"
+    },
+    "host_org_id": {
+      "format": "uuid",
+      "title": "Host Org Id",
+      "type": "string"
+    },
+    "reason": {
+      "enum": [
+        "session_ended",
+        "owner_revoked",
+        "clear",
+        "past_due",
+        "action_required",
+        "due_soon",
+        "upcoming"
+      ],
+      "title": "Reason",
+      "type": "string"
+    },
+    "requirements_count": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Requirements Count"
+    },
+    "sequence": {
+      "minimum": 1,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "host_org_id",
+    "enrollment_attempt_id",
+    "account_id",
+    "epoch",
+    "reason",
+    "sequence",
+    "deadline",
+    "requirements_count"
+  ],
+  "title": "AccessChanged",
+  "type": "object",
+  "x-event-type": "payment.connect.access.changed.v1",
+  "x-owner": "payment-service",
+  "x-serializer-sha256": "b221cdeed509feaca5c303fa8ceacd30a5b63501714dea37d4823f5132d6ff66",
+  "x-topic": "controlplane.events.v1"
+}
