@@ -38,6 +38,7 @@
     "reason": {
       "enum": [
         "session_ended",
+        "access_activated",
         "owner_revoked",
         "clear",
         "past_due",
