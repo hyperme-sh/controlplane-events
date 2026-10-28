@@ -352,6 +352,36 @@ class RoutingControlPlaneConsumer:
                 self._worker_id,
             )
 
+    async def _defer(self, event_id: int) -> bool:
+        """Release this worker's interrupted claim without spending a retry.
+
+        Delivery bookkeeping only: never acknowledges the event or changes its
+        payload. Ownership is conditional, so a stale worker cannot release a
+        replacement worker's claim. Persist before a future claim/expiry sweep.
+        """
+        assert self._engine is not None
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                text(
+                    """
+                    UPDATE controlplane_event_deliveries
+                    SET status = 'pending',
+                        attempts = GREATEST(0, attempts - 1),
+                        available_at = now(),
+                        claimed_by = NULL,
+                        claimed_at = NULL,
+                        lease_expires_at = NULL,
+                        updated_at = now()
+                    WHERE consumer_group = :group
+                      AND event_id = :event_id
+                      AND status = 'claimed'
+                      AND claimed_by = :worker
+                    """
+                ),
+                {"group": self._group_id, "event_id": event_id, "worker": self._worker_id},
+            )
+        return result.rowcount == 1
+
     async def _fail(self, event_id: int, attempts: int, exc: BaseException) -> None:
         assert self._engine is not None
         delay = backoff_seconds(attempts, fixed=self._retry_backoff_s)
