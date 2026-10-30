@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "IffLevel": {
+      "description": "Mode-5 analogue: Level 1 mission-static, Level 2 epoch-rotating.",
+      "enum": [
+        "level1",
+        "level2"
+      ],
+      "title": "IffLevel",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:tw.iff.identity.assigned.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "format": "uuid",
+      "title": "Device Id",
+      "type": "string"
+    },
+    "id_handle": {
+      "pattern": "^[0-9A-F]{6}$",
+      "title": "Id Handle",
+      "type": "string"
+    },
+    "identity_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "key_epoch": {
+      "minimum": 0,
+      "title": "Key Epoch",
+      "type": "integer"
+    },
+    "key_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Key Ref"
+    },
+    "level": {
+      "$ref": "#/$defs/IffLevel"
+    },
+    "mission_id": {
+      "format": "uuid",
+      "title": "Mission Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "identity_id",
+    "tenant_id",
+    "mission_id",
+    "device_id",
+    "id_handle",
+    "level",
+    "key_epoch",
+    "key_ref"
+  ],
+  "type": "object",
+  "x-event-type": "tw.iff.identity.assigned.v1",
+  "x-owner": "tennessee-windage",
+  "x-serializer-sha256": "4a125c16966c2a802105cef5d905a61de7e3c8cfe9da53a555dfea50dff17359",
+  "x-topic": "controlplane.events.v1"
+}

@@ -1,0 +1,154 @@
+{
+  "$defs": {
+    "ApprovalDecision": {
+      "enum": [
+        "allow_once",
+        "allow_session",
+        "deny"
+      ],
+      "title": "ApprovalDecision",
+      "type": "string"
+    },
+    "ApprovalStatus": {
+      "enum": [
+        "held",
+        "allowed",
+        "denied",
+        "timed_out"
+      ],
+      "title": "ApprovalStatus",
+      "type": "string"
+    },
+    "ApprovalWhy": {
+      "enum": [
+        "completion",
+        "tool",
+        "lease"
+      ],
+      "title": "ApprovalWhy",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.approval.resolved.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "connection_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Id"
+    },
+    "consumed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Consumed At"
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApprovalDecision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "prompt_class": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prompt Class"
+    },
+    "purpose": {
+      "title": "Purpose",
+      "type": "string"
+    },
+    "resolved_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resolved By"
+    },
+    "status": {
+      "$ref": "#/$defs/ApprovalStatus"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "who": {
+      "title": "Who",
+      "type": "string"
+    },
+    "why": {
+      "$ref": "#/$defs/ApprovalWhy"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "lease_id",
+    "connection_id",
+    "purpose",
+    "who",
+    "why",
+    "prompt_class",
+    "status",
+    "decision",
+    "resolved_by",
+    "consumed_at"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.approval.resolved.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "b87aa4e253353d4faca493bb6855e49257e4ae27068a1ab904f69dd9dfb1f6b4",
+  "x-topic": "controlplane.events.v1"
+}

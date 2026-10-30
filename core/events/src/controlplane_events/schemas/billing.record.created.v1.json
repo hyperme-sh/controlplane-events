@@ -1,0 +1,126 @@
+{
+  "$id": "urn:controlplane:event:billing.record.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "amount": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "canceled_at": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "cancellation_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "currency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "current_period_end": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "metadata": {
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "payment_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "price_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "product_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scope": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stripe_customer_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stripe_session_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stripe_subscription_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tenant_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "user_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "scope",
+    "actor",
+    "payment_type",
+    "currency",
+    "status"
+  ],
+  "type": "object",
+  "x-event-type": "billing.record.created.v1",
+  "x-owner": "platform",
+  "x-topic": "controlplane.events.v1"
+}

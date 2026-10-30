@@ -1,0 +1,52 @@
+{
+  "$id": "urn:controlplane:event:purchase.completed.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed payload for purchase.completed.v1.",
+  "properties": {
+    "buyer_id": {
+      "format": "uuid",
+      "title": "Buyer Id",
+      "type": "string"
+    },
+    "license_key": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "License Key"
+    },
+    "listing_id": {
+      "format": "uuid",
+      "title": "Listing Id",
+      "type": "string"
+    },
+    "purchase_id": {
+      "format": "uuid",
+      "title": "Purchase Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "purchase_id",
+    "listing_id",
+    "buyer_id",
+    "tenant_id"
+  ],
+  "title": "PurchaseCompletedEvent",
+  "type": "object",
+  "x-event-type": "purchase.completed.v1",
+  "x-owner": "marketplace-service",
+  "x-topic": "controlplane.events.v1"
+}

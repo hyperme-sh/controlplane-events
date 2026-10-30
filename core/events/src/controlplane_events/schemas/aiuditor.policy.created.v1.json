@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "PolicyDisposition": {
+      "enum": [
+        "allow",
+        "hold",
+        "deny"
+      ],
+      "title": "PolicyDisposition",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.policy.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "connection_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Id"
+    },
+    "disposition": {
+      "$ref": "#/$defs/PolicyDisposition"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "prompt_class": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prompt Class"
+    },
+    "purpose": {
+      "title": "Purpose",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "purpose",
+    "prompt_class",
+    "connection_id",
+    "disposition"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.policy.created.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "0bc0bd790245f23d280c8faca740ac2e3a60ff9fafde2c7df67b0fa877eddd00",
+  "x-topic": "controlplane.events.v1"
+}

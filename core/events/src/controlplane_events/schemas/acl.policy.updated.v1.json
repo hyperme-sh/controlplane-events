@@ -1,0 +1,66 @@
+{
+  "$id": "urn:controlplane:event:acl.policy.updated.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Payload for acl.policy.updated.v1.",
+  "properties": {
+    "actor_sub": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "JWT sub when available",
+      "title": "Actor Sub"
+    },
+    "operation": {
+      "description": "How the policy store changed",
+      "enum": [
+        "added",
+        "removed",
+        "replaced"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "ptype": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Ptype",
+      "type": "string"
+    },
+    "rule_preview": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Human-readable rule fragment for audit",
+      "title": "Rule Preview"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "operation",
+    "ptype"
+  ],
+  "title": "AclPolicyUpdatedPayload",
+  "type": "object",
+  "x-event-type": "acl.policy.updated.v1",
+  "x-owner": "acl-service",
+  "x-topic": "controlplane.events.v1"
+}

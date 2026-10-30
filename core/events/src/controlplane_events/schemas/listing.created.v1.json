@@ -1,0 +1,45 @@
+{
+  "$id": "urn:controlplane:event:listing.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed payload for listing.created.v1.",
+  "properties": {
+    "listing_id": {
+      "format": "uuid",
+      "title": "Listing Id",
+      "type": "string"
+    },
+    "seller_id": {
+      "format": "uuid",
+      "title": "Seller Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 512,
+      "title": "Title",
+      "type": "string"
+    },
+    "type": {
+      "description": "plugin|agent|config|hardware",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "listing_id",
+    "tenant_id",
+    "seller_id",
+    "title",
+    "type"
+  ],
+  "title": "ListingCreatedEvent",
+  "type": "object",
+  "x-event-type": "listing.created.v1",
+  "x-owner": "marketplace-service",
+  "x-topic": "controlplane.events.v1"
+}

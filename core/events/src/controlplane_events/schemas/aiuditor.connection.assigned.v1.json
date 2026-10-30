@@ -1,0 +1,119 @@
+{
+  "$defs": {
+    "ConnectionKind": {
+      "enum": [
+        "host",
+        "provider"
+      ],
+      "title": "ConnectionKind",
+      "type": "string"
+    },
+    "ConnectionPurpose": {
+      "enum": [
+        "lease",
+        "auditor"
+      ],
+      "title": "ConnectionPurpose",
+      "type": "string"
+    },
+    "ConnectionStatus": {
+      "enum": [
+        "pending",
+        "ready",
+        "disabled"
+      ],
+      "title": "ConnectionStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.connection.assigned.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "credential_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Credential Ref"
+    },
+    "device_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Device Id"
+    },
+    "endpoint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Endpoint"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ConnectionKind"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "purpose": {
+      "$ref": "#/$defs/ConnectionPurpose"
+    },
+    "status": {
+      "$ref": "#/$defs/ConnectionStatus"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "kind",
+    "purpose",
+    "device_id",
+    "endpoint",
+    "credential_ref",
+    "lease_id",
+    "status"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.connection.assigned.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "80939f33e12d6d0392e39f08ec14384b4c4476ca803ed8eb4f18d4c66d898f3c",
+  "x-topic": "controlplane.events.v1"
+}

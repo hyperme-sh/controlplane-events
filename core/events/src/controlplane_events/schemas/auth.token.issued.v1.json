@@ -1,0 +1,44 @@
+{
+  "$id": "urn:controlplane:event:auth.token.issued.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "client_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Client Id"
+    },
+    "grant_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Grant Type"
+    },
+    "subject": {
+      "description": "OIDC sub",
+      "title": "Subject",
+      "type": "string"
+    }
+  },
+  "required": [
+    "subject"
+  ],
+  "title": "AuthTokenIssuedPayload",
+  "type": "object",
+  "x-event-type": "auth.token.issued.v1",
+  "x-owner": "auth-service",
+  "x-topic": "controlplane.events.v1"
+}

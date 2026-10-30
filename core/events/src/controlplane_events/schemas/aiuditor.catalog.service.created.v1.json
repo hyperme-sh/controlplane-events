@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "ServiceBackend": {
+      "description": "AIuditor catalog backend. Not a Hypermesh class or catalog row.",
+      "enum": [
+        "hypermesh_class",
+        "hypermesh_catalog",
+        "provider"
+      ],
+      "title": "ServiceBackend",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.catalog.service.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "backend": {
+      "$ref": "#/$defs/ServiceBackend"
+    },
+    "catalog_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Catalog Id"
+    },
+    "class_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Class Id"
+    },
+    "connection_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Id"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "meters": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Meters",
+      "type": "array"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "title",
+    "backend",
+    "class_id",
+    "catalog_id",
+    "connection_id",
+    "meters"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.catalog.service.created.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "65b7815bcb0b680b6ac97dd9b2f4deb6e16ae15ca9ee1bd5eafa42f7cfa2c5f9",
+  "x-topic": "controlplane.events.v1"
+}

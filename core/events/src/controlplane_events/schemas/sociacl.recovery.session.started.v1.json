@@ -1,0 +1,44 @@
+{
+  "$id": "urn:controlplane:event:sociacl.recovery.session.started.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "sociacl.recovery.session.started.v1",
+  "properties": {
+    "idempotency_key": {
+      "maxLength": 128,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "session_id": {
+      "format": "uuid",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "pending",
+        "awaiting_proof",
+        "completed",
+        "failed"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "session_id",
+    "state",
+    "idempotency_key"
+  ],
+  "title": "SociaclRecoverySessionPayload",
+  "type": "object",
+  "x-event-type": "sociacl.recovery.session.started.v1",
+  "x-owner": "acl-service",
+  "x-topic": "controlplane.events.v1"
+}
