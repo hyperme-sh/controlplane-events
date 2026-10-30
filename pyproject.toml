@@ -19,3 +19,9 @@ packages = ["src/controlplane_events"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/controlplane_events"]
+
+[dependency-groups]
+dev = ["pytest>=8.4.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
