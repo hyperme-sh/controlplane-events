@@ -16,17 +16,15 @@ No App credential, deployment environment, package publication or runtime cutove
 is introduced. Package metadata versions retain their imported values; they do
 not reset or stand in for public-contract versions.
 
-## Automated execution hold
+## Isolated component CI
 
-Repository Actions are disabled. The staged workflow accepts only the main ref
-on push/manual dispatch; it does not execute unmerged PR code on the shared
-self-hosted runner pool. Before enabling it, verify reviewed/default-branch write
-controls and the destination's execution isolation. Automated PR checks need an
-isolated runner path; a same-repository condition and read-only workflow token
-do not sandbox collaborator-controlled code. Until then, use the local frozen
-wheel command above and require review before merge. No runner is provisioned.
+Checks run on disposable GitHub-hosted Ubuntu workers for PRs, main and manual
+runs. This repository has no access to the organization self-hosted runner groups,
+so PR changes cannot select the shared private fleet. The contents token is
+read-only; checkout credentials are not persisted, and no environment/deployment
+secrets are provided. Only the two full-SHA checkout/uv setup actions are allowed
+by repository policy; other actions are refused. No VM, runner or App is created.
 
-The current repository action policy also refuses third-party actions. The staged
-main workflow therefore remains inactive pending an explicit least-privilege
-action policy and isolated execution review; this work does not broaden that
-policy. Local wheel checks do not depend on GitHub action availability.
+This is the user-authorized isolation correction for new component repositories.
+Existing private deployment and payment jobs retain their runner access. An
+isolated package check does not authorize publication or runtime cutover.
