@@ -1,6 +1,6 @@
 name: Component checks
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches: [main]
 permissions:
@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   package:
-    if: github.event.repository.private == true && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    # No unmerged PR execution on the shared private runner pool.
+    if: github.event.repository.private == true && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: [self-hosted, linux, x64]
     timeout-minutes: 15
     steps:
