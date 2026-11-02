@@ -1,30 +1,26 @@
 # controlplane-events
 
-Component packaging from Panopticon source `2d92d13f38d491c298631b9b9296979c1fbadd19`.
+Shared typed event envelopes, JSON schemas, validation, publishing and event-store
+helpers. The package provides the `controlplane.events.v1` topic contract and the
+schema registry under `controlplane_events/schemas/`.
 
-`src/` is relocated from `core/events/src`; runtime and wire/schema bytes
-are preserved unless an explicit change is recorded in `SOURCE-MANIFEST.json`.
-`EXTRACTION.json` and the Git parents retain the original selected-path history.
+## Development
 
-Run `bash scripts/check.sh`. It uses the frozen dependency lock, runs the
-component contracts, builds wheel/sdist, then installs the wheel and locked
-dependencies into a fresh environment and repeats tests outside this checkout.
-No sibling repository or monorepo environment is used for base package checks.
+Requires Python 3.13+ and uv 0.11.26:
 
-Private CI has read-only repository permissions and disposable GitHub-hosted runners.
-No App credential, deployment environment, package publication or runtime cutover
-is introduced. Package metadata versions retain their imported values; they do
-not reset or stand in for public-contract versions.
+```sh
+bash scripts/check.sh
+```
 
-## Isolated component CI
+Checks use locked dependencies and validate the event contracts from source, an
+installed wheel in a fresh environment, and a wheel rebuilt from the source
+distribution. Both wheels must contain every runtime and schema file with the
+same contents as the checkout. Tests do not require a live event bus or database.
 
-Checks run on disposable GitHub-hosted Ubuntu workers for PRs, main and manual
-runs. This repository has no access to the organization self-hosted runner groups,
-so PR changes cannot select the shared private fleet. The contents token is
-read-only; checkout credentials are not persisted, and no environment/deployment
-secrets are provided. The external action allowlist contains only the two full-SHA checkout/uv setup
-actions. GitHub also permits local and organization-owned actions. No VM, runner or App is created.
+CI runs the same checks for pull requests, main and manual runs on isolated
+GitHub-hosted Ubuntu workers with read-only contents and pinned actions.
 
-This is the user-authorized isolation correction for new component repositories.
-Existing private deployment and payment jobs retain their runner access. An
-isolated package check does not authorize publication or runtime cutover.
+Database-backed event-store/owner-projection integration and each consuming
+service's behavior require their own integration suites. Package checks do not
+establish database migration or service deployment readiness. Preserve existing
+schema identifiers and wire compatibility when changing event definitions.
