@@ -1,0 +1,47 @@
+{
+  "$id": "urn:controlplane:event:group.member.removed.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Payload for group.member.removed.v1.",
+  "properties": {
+    "group_id": {
+      "format": "uuid",
+      "title": "Group Id",
+      "type": "string"
+    },
+    "removed_by_user_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Actor from JWT sub when available",
+      "title": "Removed By User Id"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "user_id": {
+      "format": "uuid",
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "group_id",
+    "tenant_id"
+  ],
+  "title": "GroupMemberRemovedPayload",
+  "type": "object",
+  "x-event-type": "group.member.removed.v1",
+  "x-owner": "user-service",
+  "x-topic": "controlplane.events.v1"
+}

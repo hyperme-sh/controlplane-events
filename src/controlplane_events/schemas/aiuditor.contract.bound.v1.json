@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "ContractParty": {
+      "description": "Who binds. Not a prompt body.",
+      "properties": {
+        "role": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "subject"
+      ],
+      "title": "ContractParty",
+      "type": "object"
+    },
+    "ContractStatus": {
+      "enum": [
+        "draft",
+        "signed",
+        "suspended"
+      ],
+      "title": "ContractStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.contract.bound.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "connection_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connection Id"
+    },
+    "dispute_tip": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dispute Tip"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "meters": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Meters",
+      "type": "array"
+    },
+    "parties": {
+      "items": {
+        "$ref": "#/$defs/ContractParty"
+      },
+      "title": "Parties",
+      "type": "array"
+    },
+    "rail": {
+      "title": "Rail",
+      "type": "string"
+    },
+    "signed_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Signed By"
+    },
+    "status": {
+      "$ref": "#/$defs/ContractStatus"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "until": {
+      "format": "date-time",
+      "title": "Until",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "parties",
+    "meters",
+    "rail",
+    "until",
+    "dispute_tip",
+    "connection_id",
+    "lease_id",
+    "status",
+    "signed_by"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.contract.bound.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "2b054a9e85e6049a4dd66dfa4d73a9c55bc4312e7f2bdafab8f4d6012c8df1f8",
+  "x-topic": "controlplane.events.v1"
+}

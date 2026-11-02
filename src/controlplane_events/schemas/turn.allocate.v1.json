@@ -1,0 +1,35 @@
+{
+  "$id": "urn:controlplane:event:turn.allocate.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "client_id": {
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "grant_kind": {
+      "type": "string"
+    },
+    "relay_host": {
+      "type": "string"
+    },
+    "ttl_sec": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "ttl_sec",
+    "expires_at",
+    "client_id",
+    "relay_host",
+    "grant_kind"
+  ],
+  "type": "object",
+  "x-event-type": "turn.allocate.v1",
+  "x-owner": "turn",
+  "x-topic": "controlplane.events.v1"
+}

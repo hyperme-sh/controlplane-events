@@ -1,0 +1,26 @@
+{
+  "$id": "urn:controlplane:event:tenant.created.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "subdomain": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "name",
+    "subdomain"
+  ],
+  "type": "object",
+  "x-event-type": "tenant.created.v1",
+  "x-owner": "platform",
+  "x-topic": "controlplane.events.v1"
+}

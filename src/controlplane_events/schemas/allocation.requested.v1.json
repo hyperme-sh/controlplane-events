@@ -1,0 +1,53 @@
+{
+  "$id": "urn:controlplane:event:allocation.requested.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A request can precede placement; hardware allocations have no workload.",
+  "properties": {
+    "allocation_id": {
+      "format": "uuid",
+      "title": "Allocation Id",
+      "type": "string"
+    },
+    "device_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Device Id"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "workload_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Workload Id"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "allocation_id"
+  ],
+  "title": "AllocationRequestedPayload",
+  "type": "object",
+  "x-event-type": "allocation.requested.v1",
+  "x-owner": "hypermesh",
+  "x-topic": "controlplane.events.v1"
+}

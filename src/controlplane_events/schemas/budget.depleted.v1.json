@@ -1,0 +1,52 @@
+{
+  "$id": "urn:controlplane:event:budget.depleted.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed payload for budget.depleted.v1 \u2014 LLM/agent fiat budget (not crypto lamports).",
+  "properties": {
+    "budget_id": {
+      "format": "uuid",
+      "title": "Budget Id",
+      "type": "string"
+    },
+    "ceiling_cents": {
+      "minimum": 0,
+      "title": "Ceiling Cents",
+      "type": "integer"
+    },
+    "spent_cents": {
+      "minimum": 0,
+      "title": "Spent Cents",
+      "type": "integer"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "user_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "User Id"
+    }
+  },
+  "required": [
+    "budget_id",
+    "tenant_id",
+    "spent_cents",
+    "ceiling_cents"
+  ],
+  "title": "BudgetDepletedEvent",
+  "type": "object",
+  "x-event-type": "budget.depleted.v1",
+  "x-owner": "ai-service",
+  "x-topic": "controlplane.events.v1"
+}

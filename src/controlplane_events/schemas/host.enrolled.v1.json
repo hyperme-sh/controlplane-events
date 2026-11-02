@@ -1,0 +1,26 @@
+{
+  "$id": "urn:controlplane:event:host.enrolled.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "format": "uuid",
+      "title": "Device Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "device_id"
+  ],
+  "title": "HostEnrolledPayload",
+  "type": "object",
+  "x-event-type": "host.enrolled.v1",
+  "x-owner": "hypermesh",
+  "x-topic": "controlplane.events.v1"
+}

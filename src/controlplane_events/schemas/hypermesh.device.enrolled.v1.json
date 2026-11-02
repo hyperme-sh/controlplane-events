@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "PlaneRole": {
+      "description": "Pinned by Panopticon on token mint / device create. Binary on disk is not the role.",
+      "enum": [
+        "host",
+        "gateway",
+        "plane"
+      ],
+      "title": "PlaneRole",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:hypermesh.device.enrolled.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "class_id": {
+      "title": "Class Id",
+      "type": "string"
+    },
+    "device_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "enroll_token_prefix": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Enroll Token Prefix"
+    },
+    "host_org_id": {
+      "format": "uuid",
+      "title": "Host Org Id",
+      "type": "string"
+    },
+    "path_a_identity": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Identity",
+      "type": "string"
+    },
+    "path_a_sku": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Sku",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/PlaneRole",
+      "default": "host"
+    },
+    "serial": {
+      "title": "Serial",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "device_id",
+    "tenant_id",
+    "class_id",
+    "host_org_id",
+    "serial",
+    "path_a_sku",
+    "path_a_identity",
+    "enroll_token_prefix",
+    "role"
+  ],
+  "type": "object",
+  "x-event-type": "hypermesh.device.enrolled.v1",
+  "x-owner": "hypermesh",
+  "x-serializer-sha256": "0df4d5d21ff707935a843ef51aadd527dd1762b5d5b2f0c1d3adb2adb311d3e5",
+  "x-topic": "controlplane.events.v1"
+}

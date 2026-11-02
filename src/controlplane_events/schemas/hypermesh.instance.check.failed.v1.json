@@ -1,0 +1,129 @@
+{
+  "$defs": {
+    "JobKind": {
+      "enum": [
+        "path_b",
+        "compact_cert",
+        "lab_pull",
+        "instance_check",
+        "lease_start",
+        "lease_stop",
+        "sell_pause"
+      ],
+      "title": "JobKind",
+      "type": "string"
+    },
+    "JobStatus": {
+      "enum": [
+        "pending",
+        "passed",
+        "failed"
+      ],
+      "title": "JobStatus",
+      "type": "string"
+    },
+    "SellState": {
+      "description": "Host-reported sell posture. Not Path B. Do not invent from path_b_state.",
+      "enum": [
+        "selling",
+        "paused",
+        "draining",
+        "off",
+        "n/a"
+      ],
+      "title": "SellState",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:hypermesh.instance.check.failed.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "format": "uuid",
+      "title": "Device Id",
+      "type": "string"
+    },
+    "image_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Image Hash"
+    },
+    "job_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/JobKind"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "sell_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SellState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "status": {
+      "$ref": "#/$defs/JobStatus",
+      "default": "pending"
+    },
+    "suite_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Suite Id"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "tenant_id",
+    "device_id",
+    "suite_id",
+    "kind",
+    "status",
+    "image_hash",
+    "lease_id",
+    "sell_state"
+  ],
+  "type": "object",
+  "x-event-type": "hypermesh.instance.check.failed.v1",
+  "x-owner": "hypermesh",
+  "x-serializer-sha256": "59f75f0fe8945ab8792a4eb130675af27bf471e53cd25cd0a91fccff2e1d468f",
+  "x-topic": "controlplane.events.v1"
+}

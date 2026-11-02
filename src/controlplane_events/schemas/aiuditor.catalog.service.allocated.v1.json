@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "ServiceBackend": {
+      "description": "AIuditor catalog backend. Not a Hypermesh class or catalog row.",
+      "enum": [
+        "hypermesh_class",
+        "hypermesh_catalog",
+        "provider"
+      ],
+      "title": "ServiceBackend",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:aiuditor.catalog.service.allocated.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "backend": {
+      "$ref": "#/$defs/ServiceBackend"
+    },
+    "connection_id": {
+      "format": "uuid",
+      "title": "Connection Id",
+      "type": "string"
+    },
+    "contract_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "purpose": {
+      "default": "lease",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "service_id": {
+      "format": "uuid",
+      "title": "Service Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "service_id",
+    "contract_id",
+    "connection_id",
+    "backend",
+    "lease_id",
+    "purpose"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.catalog.service.allocated.v1",
+  "x-owner": "aiuditor",
+  "x-serializer-sha256": "266ec83548939f657d3faaa56013d3a5ddcdecd850a849c669e09cddf33ed7e1",
+  "x-topic": "controlplane.events.v1"
+}

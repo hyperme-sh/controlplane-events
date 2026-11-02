@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "LeaseKind": {
+      "enum": [
+        "p1_hardware",
+        "p2_loaded_model"
+      ],
+      "title": "LeaseKind",
+      "type": "string"
+    },
+    "LeaseStatus": {
+      "enum": [
+        "offered",
+        "paid",
+        "starting",
+        "active",
+        "ended",
+        "failed",
+        "refunded",
+        "suspended"
+      ],
+      "title": "LeaseStatus",
+      "type": "string"
+    },
+    "TicketPurpose": {
+      "description": "Who the signed lease ticket is for. Not a Keycloak role.",
+      "enum": [
+        "renter",
+        "ir",
+        "service"
+      ],
+      "title": "TicketPurpose",
+      "type": "string"
+    }
+  },
+  "$id": "urn:controlplane:event:hypermesh.lease.started.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "billing_record_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Billing Record Id"
+    },
+    "catalog_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Catalog Id"
+    },
+    "class_id": {
+      "title": "Class Id",
+      "type": "string"
+    },
+    "contract_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Contract Id"
+    },
+    "device_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Device Id"
+    },
+    "gross_cents": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gross Cents"
+    },
+    "host_org_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Host Org Id"
+    },
+    "kind": {
+      "$ref": "#/$defs/LeaseKind"
+    },
+    "lease_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "purpose": {
+      "$ref": "#/$defs/TicketPurpose",
+      "default": "renter"
+    },
+    "renter_user_id": {
+      "format": "uuid",
+      "title": "Renter User Id",
+      "type": "string"
+    },
+    "reserved_hours": {
+      "title": "Reserved Hours",
+      "type": "integer"
+    },
+    "status": {
+      "$ref": "#/$defs/LeaseStatus"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "lease_id",
+    "tenant_id",
+    "kind",
+    "status",
+    "class_id",
+    "catalog_id",
+    "device_id",
+    "host_org_id",
+    "renter_user_id",
+    "billing_record_id",
+    "reserved_hours",
+    "gross_cents",
+    "purpose",
+    "contract_id"
+  ],
+  "type": "object",
+  "x-event-type": "hypermesh.lease.started.v1",
+  "x-owner": "hypermesh",
+  "x-serializer-sha256": "a302a0331360fddbad6b13eecb408adb57282a044d2c2d8471de96bd945c7722",
+  "x-topic": "controlplane.events.v1"
+}

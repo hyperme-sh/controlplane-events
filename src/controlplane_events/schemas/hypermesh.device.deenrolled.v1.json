@@ -1,0 +1,40 @@
+{
+  "$id": "urn:controlplane:event:hypermesh.device.deenrolled.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "class_id": {
+      "title": "Class Id",
+      "type": "string"
+    },
+    "device_id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "enrolled": {
+      "const": false
+    },
+    "serial": {
+      "title": "Serial",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "device_id",
+    "tenant_id",
+    "class_id",
+    "serial",
+    "enrolled"
+  ],
+  "type": "object",
+  "x-event-type": "hypermesh.device.deenrolled.v1",
+  "x-owner": "hypermesh",
+  "x-serializer-sha256": "1cc44f71771d57ee80ff389f210c4246ba10d6907b089dd4ff8002c5683be0dd",
+  "x-topic": "controlplane.events.v1"
+}
