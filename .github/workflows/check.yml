@@ -27,6 +27,7 @@ jobs:
           python-version: '3.13'
           enable-cache: false
       - run: bash scripts/check.sh
+      # GitHub checks action allowlists even when this main-only upload is skipped.
       - name: Retain validated package bytes
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
