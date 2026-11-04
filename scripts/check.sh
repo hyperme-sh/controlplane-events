@@ -25,3 +25,9 @@ uv build --wheel "$check_tmp"/sdist/* --no-sources --out-dir "$check_tmp/rebuilt
 uv run --frozen python scripts/verify_wheel.py "$check_tmp/rebuilt"
 uv pip install --python "$check_tmp/venv/bin/python" --no-deps --reinstall "$check_tmp"/rebuilt/*.whl
 (cd "$check_tmp" && "$check_tmp/venv/bin/python" -I -m pytest -c /dev/null tests -q)
+
+# Retain the exact validated bytes for the release channel; never rebuild them.
+if [[ -n "${RELEASE_ARTIFACT_DIR:-}" ]]; then
+  mkdir -p "$RELEASE_ARTIFACT_DIR"
+  cp "$check_tmp/dist"/* "$RELEASE_ARTIFACT_DIR/"
+fi
