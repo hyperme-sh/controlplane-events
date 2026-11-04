@@ -1,7 +1,7 @@
 {
   "$defs": {
     "PlaneRole": {
-      "description": "Pinned by (s)panopticon on token mint / device create. Binary on disk is not the role.",
+      "description": "Pinned by spanopticon on token mint / device create. Binary on disk is not the role.",
       "enum": [
         "host",
         "gateway",
