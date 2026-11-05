@@ -37,3 +37,39 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
+  postgres-integration:
+    # Private schema reads belong only to trusted main, never PR code.
+    if: github.event.repository.private == true && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          version: 0.11.26
+          python-version: '3.13'
+          enable-cache: false
+      - name: Validate event owner against PostgreSQL
+        env:
+          DEPENDENCY_READ_TOKEN: ${{ secrets.DEPENDENCY_READ_TOKEN }}
+          TEST_EVIDENCE_DIR: ${{ runner.temp }}/event-test-results
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DEPENDENCY_READ_TOKEN"
+          header=$(printf 'x-access-token:%s' "$DEPENDENCY_READ_TOKEN" | base64 -w0)
+          echo "::add-mask::$header"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/hyperme-sh/controlplane-db.git.extraheader
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $header"
+          unset DEPENDENCY_READ_TOKEN
+          bash scripts/check-integration.sh
+      - name: Retain executed integration identities
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: postgres-test-results
+          path: ${{ runner.temp }}/event-test-results/*.xml
+          if-no-files-found: error
+          retention-days: 90
