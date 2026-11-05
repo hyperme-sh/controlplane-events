@@ -1,0 +1,320 @@
+{
+  "events": {
+    "acl.policy.updated.v1": {
+      "model": "AclPolicyUpdatedPayload",
+      "module": "controlplane_events.payloads.acl_policy_updated",
+      "owner": "acl-service",
+      "status": "existing"
+    },
+    "allocation.ended.v1": {
+      "model": "AllocationEndedPayload",
+      "module": "controlplane_events.payloads.allocation_events",
+      "owner": "hypermesh",
+      "status": "reserved"
+    },
+    "allocation.requested.v1": {
+      "model": "AllocationRequestedPayload",
+      "module": "controlplane_events.payloads.allocation_events",
+      "owner": "hypermesh",
+      "status": "reserved"
+    },
+    "auth.login.success.v1": {
+      "model": "AuthLoginSuccessPayload",
+      "module": "controlplane_events.payloads.auth_events",
+      "owner": "auth-service",
+      "status": "existing"
+    },
+    "auth.token.issued.v1": {
+      "model": "AuthTokenIssuedPayload",
+      "module": "controlplane_events.payloads.auth_events",
+      "owner": "auth-service",
+      "status": "existing"
+    },
+    "billing.record.created.v1": {
+      "inline": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "amount": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "canceled_at": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "cancellation_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current_period_end": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "payment_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "price_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "product_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stripe_customer_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stripe_session_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stripe_subscription_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tenant_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "user_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "scope",
+          "actor",
+          "payment_type",
+          "currency",
+          "status"
+        ],
+        "type": "object"
+      },
+      "model": null,
+      "module": null,
+      "owner": "platform"
+    },
+    "budget.allocated.v1": {
+      "model": "BudgetAllocatedPayload",
+      "module": "controlplane_events.payloads.payment_events",
+      "owner": "payment-service",
+      "status": "existing"
+    },
+    "budget.depleted.v1": {
+      "model": "BudgetDepletedEvent",
+      "module": "controlplane_events.payloads.budget_depleted",
+      "owner": "ai-service",
+      "status": "existing"
+    },
+    "group.member.added.v1": {
+      "model": "GroupMemberAddedPayload",
+      "module": "controlplane_events.payloads.group_member_added",
+      "owner": "user-service",
+      "status": "existing"
+    },
+    "group.member.removed.v1": {
+      "model": "GroupMemberRemovedPayload",
+      "module": "controlplane_events.payloads.group_member_removed",
+      "owner": "user-service",
+      "status": "existing"
+    },
+    "host.enrolled.v1": {
+      "model": "HostEnrolledPayload",
+      "module": "controlplane_events.payloads.allocation_events",
+      "owner": "hypermesh",
+      "status": "reserved"
+    },
+    "listing.created.v1": {
+      "model": "ListingCreatedEvent",
+      "module": "controlplane_events.payloads.listing_created",
+      "owner": "marketplace-service",
+      "status": "existing"
+    },
+    "payment.succeeded.v1": {
+      "model": "PaymentSucceededPayload",
+      "module": "controlplane_events.payloads.payment_events",
+      "owner": "payment-service",
+      "status": "existing"
+    },
+    "payment.succeeded.v2": {
+      "model": "PaymentSucceededV2Payload",
+      "module": "controlplane_events.payloads.payment_events",
+      "owner": "payment-service",
+      "status": "reserved"
+    },
+    "purchase.completed.v1": {
+      "model": "PurchaseCompletedEvent",
+      "module": "controlplane_events.payloads.purchase_completed",
+      "owner": "marketplace-service",
+      "status": "existing"
+    },
+    "sociacl.access.decided.v1": {
+      "model": "SociaclAccessDecidedPayload",
+      "module": "controlplane_events.payloads.sociacl_events",
+      "owner": "acl-service",
+      "status": "existing"
+    },
+    "sociacl.recovery.session.started.v1": {
+      "model": "SociaclRecoverySessionPayload",
+      "module": "controlplane_events.payloads.sociacl_events",
+      "owner": "acl-service",
+      "status": "existing"
+    },
+    "sociacl.share.created.v1": {
+      "model": "SociaclShareCreatedPayload",
+      "module": "controlplane_events.payloads.sociacl_events",
+      "owner": "acl-service",
+      "status": "existing"
+    },
+    "sociacl.share.resolved.v1": {
+      "model": "SociaclShareResolvedPayload",
+      "module": "controlplane_events.payloads.sociacl_events",
+      "owner": "acl-service",
+      "status": "existing"
+    },
+    "tenant.created.v1": {
+      "inline": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "subdomain": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenant_id",
+          "name",
+          "subdomain"
+        ],
+        "type": "object"
+      },
+      "model": null,
+      "module": null,
+      "owner": "platform"
+    },
+    "tokens.used.v1": {
+      "model": "TokensUsedEvent",
+      "module": "controlplane_events.payloads.tokens_used",
+      "owner": "ai-service",
+      "status": "existing"
+    },
+    "turn.allocate.v1": {
+      "inline": {
+        "additionalProperties": false,
+        "properties": {
+          "client_id": {
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "grant_kind": {
+            "type": "string"
+          },
+          "relay_host": {
+            "type": "string"
+          },
+          "ttl_sec": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ttl_sec",
+          "expires_at",
+          "client_id",
+          "relay_host",
+          "grant_kind"
+        ],
+        "type": "object"
+      },
+      "model": null,
+      "module": null,
+      "owner": "turn"
+    },
+    "user.created.v1": {
+      "model": "UserCreatedEvent",
+      "module": "controlplane_events.payloads.user_created",
+      "owner": "user-service",
+      "status": "existing"
+    }
+  },
+  "provenance": {
+    "commit": "2cd00fd9a7ebb950999571a81be7cb0a24d9264e",
+    "files": {
+      "core/e2e-tests/tests/test_event_wire_sources.py": "325303805df55ae157268e42493aea2a81d8fbecfb05632f82f24dfa479f9714",
+      "scripts/event_contract_sources.json": "5988c3b2c470f6076d9fa4c7159408c11639739eceaef8e9a604daf95c2230bd",
+      "scripts/generate_event_contracts.py": "af636888ec9e5692eb1a08089184b2570aa2a4ca1a2389d40ea0eb1d5a6db5fd"
+    },
+    "repository": "FyberLabs/panopticon"
+  }
+}
