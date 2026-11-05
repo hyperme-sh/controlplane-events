@@ -56,3 +56,11 @@ organization policy may shorten it). Expired evidence fails closed: validate a
 new main revision. The publisher verifies the run, source, workflow and artifact
 digest independently of release metadata. Repository immutable releases must be
 enabled. See the [shared release contract](https://github.com/hyperme-sh/.github/blob/7749591fccd30d46ba9b0adabe82114001c9d0de/actions/release-channel/README.md).
+
+## License
+
+Copyright 2026 controlplane-events contributors.
+
+This project's code and schemas are licensed under [Apache-2.0](LICENSE).
+Separately installed dependencies retain their own licenses. The wheel and
+source distribution include the license text and SPDX package metadata.

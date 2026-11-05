@@ -3,13 +3,13 @@
   "line": "0.24",
   "components": {
     "controlplane-events": {
-      "version": "0.24.0",
+      "version": "0.24.1",
       "contract": "contract.json",
       "contract_sha256": "705c78b9f0f6d5358cd11a02a358a8d6f53c8ee331c5d046d1bb4d083a47163b",
       "artifact": {
         "kind": "package",
-        "uri": "urn:sha256:3956b4d78429e7158b053d9d0d4c425659e6f82a2b9ead8f1614bfae6d15939f",
-        "sha256": "3956b4d78429e7158b053d9d0d4c425659e6f82a2b9ead8f1614bfae6d15939f"
+        "uri": "urn:sha256:52d03214932de92416a7c50d34685d180d7bbf64732b75f31f309dfd7621e566",
+        "sha256": "52d03214932de92416a7c50d34685d180d7bbf64732b75f31f309dfd7621e566"
       }
     }
   }
