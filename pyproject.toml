@@ -22,6 +22,15 @@ include = ["src/controlplane_events"]
 
 [dependency-groups]
 dev = ["pytest>=8.4.0"]
+integration = [
+    "controlplane-db",
+    "psycopg[binary]>=3.2",
+    "pytest-asyncio>=1.2",
+    "testcontainers>=4.9",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+controlplane-db = { git = "https://github.com/hyperme-sh/controlplane-db.git", rev = "58e580d639061c8dcdf9cc65b94b44be17c5b576" }

@@ -20,8 +20,25 @@ same contents as the checkout. Tests do not require a live event bus or database
 CI runs the same checks for pull requests, main and manual runs on isolated
 GitHub-hosted Ubuntu workers with read-only contents and pinned actions.
 
-Database-backed event-store/owner-projection integration and each consuming
-service's behavior require their own integration suites. Package checks do not
+The event-store and source subscription PostgreSQL suites run on trusted main:
+
+```sh
+bash scripts/check-integration.sh
+```
+
+This requires Docker and read access to the pinned controlplane-db dependency.
+CI uses DEPENDENCY_READ_TOKEN only for this main-only job; pull-request package
+checks remain credential-free. All 31 integration cases run against source,
+installed wheel and rebuilt sdist with matching JUnit identities and no skips.
+Fixtures apply the event owner's migrations to digest-pinned PostgreSQL 16.
+Tests cover delivery, idempotency, source subscriptions, migration preservation,
+search-path hardening and temporary-table shadowing. No live provider is used.
+
+These suites and the user-created payload regressions were transferred from
+Panopticon `d6d9541b72db2eb3f86cb8aedc071794eba116e3`. Fixtures use published
+controlplane-db migrations; the function contract checks both current registration
+overloads explicitly. Each consuming service's behavior still requires its own
+integration suite. Package checks do not
 establish database migration or service deployment readiness. Preserve existing
 schema identifiers and wire compatibility when changing event definitions.
 
