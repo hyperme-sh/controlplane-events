@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "controlplane-events"
-version = "0.24.0"
+version = "0.1.0"
 requires-python = ">=3.13"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -35,4 +35,4 @@ integration = [
 testpaths = ["tests"]
 
 [tool.uv.sources]
-controlplane-db = { git = "https://github.com/hyperme-sh/controlplane-db.git", rev = "58e580d639061c8dcdf9cc65b94b44be17c5b576" }
+controlplane-db = { git = "https://github.com/hyperme-sh/controlplane-db.git", rev = "95ef61433374274f4a4fc287e15982be6357e1cc" }
