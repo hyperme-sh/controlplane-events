@@ -1,10 +1,22 @@
 {
-  "schema_version": 1,
-  "source_sha": "c914c477172e1e39bdba16a705a821424a42d1c6",
-  "test_release": "https://github.com/hyperme-sh/controlplane-events/releases/tag/test-c914c477172e1e39bdba16a705a821424a42d1c6",
-  "run_url": "https://github.com/hyperme-sh/controlplane-events/actions/runs/41933584245",
-  "artifact_id": 13373031657,
-  "actions_archive_digest": "sha256:854ecf6fe5101efb7cde41a26bd6c5e2c254d1a2cc5ca1905fb5253d51bed387",
-  "wheel_sha256": "2e3e8defdc405cc19491849ae0bf881f5c3d962230a3c8664606ee02cf5f5447",
-  "qualification": "Verified successful main-run source/fresh-wheel/rebuilt-sdist checks and exact immutable test-release bytes; conservative complete packaged runtime/event-schema contract. No live database or deployment acceptance claimed."
+  "repository": "hyperme-sh/controlplane-events",
+  "revision": "ae5aa86dc53b1a9e25ae4527fefeea6da6fb66ea",
+  "release_id": 434610011,
+  "immutable": true,
+  "tag": "test-ae5aa86dc53b1a9e25ae4527fefeea6da6fb66ea",
+  "run_id": 41939526369,
+  "artifact_id": 13375229422,
+  "assets": {
+    "controlplane_events-0.24.0-py3-none-any.whl": "sha256:3956b4d78429e7158b053d9d0d4c425659e6f82a2b9ead8f1614bfae6d15939f",
+    "controlplane_events-0.24.0.tar.gz": "sha256:a4eb3c31d88df3cd31328ba5bd34d654129f7f22aca4ac4ab25f0e4bd54a7257"
+  },
+  "published_release_url": "https://github.com/hyperme-sh/controlplane-events/releases/tag/test-ae5aa86dc53b1a9e25ae4527fefeea6da6fb66ea",
+  "checks": [
+    "successful same-repository main-push package run",
+    "live Actions artifact digest",
+    "release bytes equal tested bytes",
+    "immutable release and tag revision",
+    "asset digests equal manifest"
+  ],
+  "consumer_qualification": "64 tests against exact published 0.24 wheel in isolated interpreter; bundled schemas, tenant rejection and routing dispatch. Hosted main run also passed 64 tests in each source/wheel/rebuilt-sdist context and 15 tooling tests. PostgreSQL delivery and deployed-service acceptance remain separate."
 }

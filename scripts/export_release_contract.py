@@ -43,9 +43,8 @@ def snapshot(wheel):
     if not isinstance(exports, list) or not exports or not all(isinstance(n, str) for n in exports) or len(exports) != len(set(exports)):
         raise ValueError('Invalid package exports')
     contract = {'schema_version': 1,
-                'coverage': 'conservative complete packaged event schemas, envelopes, validators, publisher and consumer bytes',
+                'coverage': 'conservative complete packaged event runtime, routing, payload and bundled schema bytes',
                 'public_root_exports': sorted(exports),
-                'event_schemas': {n: json.loads(b) for n, b in contents.items() if n.startswith('controlplane_events/schemas/') and n.endswith('.json')},
                 'packaged_file_sha256': {n: hashlib.sha256(b).hexdigest() for n, b in contents.items()}}
     encoded = (json.dumps(contract, sort_keys=True, indent=2)+'\n').encode()
     evidence = {'schema_version': 1, 'distribution': 'controlplane-events', 'version': ver,

@@ -39,26 +39,3 @@ organization policy may shorten it). Expired evidence fails closed: validate a
 new main revision. The publisher verifies the run, source, workflow and artifact
 digest independently of release metadata. Repository immutable releases must be
 enabled. See the [shared release contract](https://github.com/hyperme-sh/.github/blob/7749591fccd30d46ba9b0adabe82114001c9d0de/actions/release-channel/README.md).
-
-## Artifact-backed release baseline
-
-The initial accepted contract is bound to the real immutable 0.1.0 **test** wheel,
-its successful main validation run, and the matching live Actions artifact.
-`releases/accepted/provenance.json` records those identities. The independent
-baseline reference is `d24ca143a4ccc457a3578076e1d4a16b2d5ea63a`; it does not use
-the unqualified `v0.1.0` release as evidence.
-
-The 0.24.0 candidate changes package metadata only. Its complete packaged runtime
-and event schemas match the accepted contract byte for byte. Package CI exports
-the built wheel's contract and rejects mismatched candidate versions, wheel
-hashes, contract paths or contract hashes before retaining publication artifacts.
-Fresh and sdist-rebuilt installed wheels also exercise tenant-bound consumer
-dispatch, malformed-input refusal and every packaged export/schema. No live
-payment, identity, database or deployment operation is part of these checks.
-
-The snapshot intentionally includes every packaged runtime file. It is
-conservative and may reject compatible implementation changes; it must not be
-silently narrowed to admit a patch. Database-backed event-store/projection and
-service deployment acceptance remain separate. After main publishes the actual
-0.24 artifact, verify it before advancing the accepted 0.24 baseline; this PR
-alone does not claim a production deployment or stable release.
