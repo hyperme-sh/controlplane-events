@@ -74,3 +74,12 @@ test snapshots remain under qualification, including newer development artifacts
 at the same embedded package version. They do not replace the released bytes or
 reserve another stable version; a future changed stable artifact needs an explicit
 new version and candidate. This record does not publish or deploy anything.
+
+### Actions qualification and stable publication
+
+Main merges and workflow completion do not publish GitHub test releases. Exact
+qualification files remain in Actions artifacts with finite retention. The pinned
+publisher independently verifies a real immutable stable baseline and refuses
+qualification snapshots, even if a caller job reports success. Existing valid
+stable records are retained; no release, version change, deployment or human
+approval prerequisite is introduced by this correction.
