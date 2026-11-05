@@ -12,10 +12,11 @@ concurrency:
 jobs:
   package:
     # Disposable hosted workers have no route into the shared private runner fleet.
-    if: github.event.repository.private == true
-    runs-on: [self-hosted, linux, x64, debrunner]
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "debrunner"]') || 'ubuntu-24.04' }}
     timeout-minutes: 15
     steps:
+      - name: Prepare test evidence directory
+        run: echo "TEST_EVIDENCE_DIR=$RUNNER_TEMP/package-test-results" >> "$GITHUB_ENV"
       - name: Prepare release output
         run: echo "RELEASE_ARTIFACT_DIR=$(mktemp -d "$RUNNER_TEMP/release-dist.XXXXXX")" >> "$GITHUB_ENV"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -37,13 +38,22 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
+      - name: Retain matching package test inventories
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: package-test-results
+          path: ${{ runner.temp }}/package-test-results/*.xml
+          if-no-files-found: error
+          retention-days: 90
   postgres-integration:
     # Private schema reads belong only to trusted main, never PR code.
-    if: github.event.repository.private == true && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: [self-hosted, linux, x64, debrunner]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "debrunner"]') || 'ubuntu-24.04' }}
     timeout-minutes: 20
     environment: controlplane-libs-read
     steps:
+      - name: Prepare test evidence directory
+        run: echo "TEST_EVIDENCE_DIR=$RUNNER_TEMP/package-test-results" >> "$GITHUB_ENV"
       - name: Mint repository-scoped dependency token
         id: dependency-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
