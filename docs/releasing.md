@@ -18,6 +18,8 @@ A future stable artifact with different bytes needs a new version and a new cand
 
 [`.github/workflows/check.yml`](../.github/workflows/check.yml) runs `scripts/check.sh` on pull requests, on pushes to `main`, and on manual dispatch. A successful push to `main` uploads the exact wheel and sdist that the job built as the `tested-dist` artifact, retained for 90 days, and uploads the matching JUnit results. Those artifacts are the qualification record for that commit.
 
+Public repositories run the package job, the Postgres job, and the test-bundle, stable-publication, and version-policy jobs on GitHub-hosted runners. A private repository may run those jobs on runners it provides.
+
 A merge to `main` stores the `tested-dist` artifact. Creating a GitHub release or a tag is a later, separate workflow.
 
 ## Test snapshots and test bundles

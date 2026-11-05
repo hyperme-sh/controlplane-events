@@ -192,7 +192,7 @@ The Postgres suites apply the `events` migration chain from the pinned `controlp
 bash scripts/check-integration.sh
 ```
 
-[`.github/workflows/check.yml`](.github/workflows/check.yml) runs the package checks on pull requests, on pushes to `main`, and on manual dispatch, on GitHub-hosted Ubuntu 24.04. The Postgres job runs when `main` is validated. A push to `main` keeps the exact tested distributions as the `tested-dist` artifact for 90 days.
+[`.github/workflows/check.yml`](.github/workflows/check.yml) runs the package checks on pull requests, on pushes to `main`, and on manual dispatch. Public repositories run those jobs on GitHub-hosted runners. A private repository may run the same jobs on runners it provides. The Postgres job runs when `main` is validated. A push to `main` keeps the exact tested distributions as the `tested-dist` artifact for 90 days.
 
 Preserve schema identifiers and wire bytes when changing an event that other services already consume. Compatibility rules for a release are in [docs/release-policy.md](docs/release-policy.md).
 
