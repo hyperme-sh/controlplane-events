@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_sha": "c914c477172e1e39bdba16a705a821424a42d1c6",
+  "test_release": "https://github.com/hyperme-sh/controlplane-events/releases/tag/test-c914c477172e1e39bdba16a705a821424a42d1c6",
+  "run_url": "https://github.com/hyperme-sh/controlplane-events/actions/runs/41933584245",
+  "artifact_id": 13373031657,
+  "actions_archive_digest": "sha256:854ecf6fe5101efb7cde41a26bd6c5e2c254d1a2cc5ca1905fb5253d51bed387",
+  "wheel_sha256": "2e3e8defdc405cc19491849ae0bf881f5c3d962230a3c8664606ee02cf5f5447",
+  "qualification": "Verified successful main-run source/fresh-wheel/rebuilt-sdist checks and exact immutable test-release bytes; conservative complete packaged runtime/event-schema contract. No live database or deployment acceptance claimed."
+}
