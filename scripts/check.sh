@@ -11,9 +11,11 @@ trap 'rm -rf "$check_tmp"' EXIT
 uv build --no-sources --out-dir "$check_tmp/dist"
 uv run --frozen python scripts/verify_wheel.py "$check_tmp/dist"
 uv run --frozen python scripts/export_release_contract.py "$check_tmp"/dist/*.whl --output "$check_tmp/contract"
-if [[ -f releases/candidate/release.json ]]; then
-  uv run --frozen python scripts/verify_release_candidate.py releases/candidate/release.json "$check_tmp/contract/contract.json" "$check_tmp/contract/evidence.json" controlplane-events
+for qualified_manifest in releases/qualification/current/release.json releases/candidate/release.json; do
+if [[ -f "$qualified_manifest" ]]; then
+  uv run --frozen python scripts/verify_release_candidate.py "$qualified_manifest" "$check_tmp/contract/contract.json" "$check_tmp/contract/evidence.json" controlplane-events
 fi
+done
 uv venv "$check_tmp/venv" --python 3.13
 uv export --frozen --no-emit-project --format requirements-txt --output-file "$check_tmp/requirements.txt" >/dev/null
 uv pip sync --python "$check_tmp/venv/bin/python" --require-hashes "$check_tmp/requirements.txt"
