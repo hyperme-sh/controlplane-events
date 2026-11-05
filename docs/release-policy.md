@@ -67,3 +67,10 @@ become accepted through a provenance label. No stable baseline is recorded until
 that release exists. Stable publication remains closed without a valid baseline;
 first stable bootstrap and coordinated release qualification remain separate.
 No stable version, approval prerequisite or deployment is introduced here.
+
+The accepted baseline now records the actual immutable `v0.24.0` stable release,
+including its release ID, source commit and published asset digests. Historical
+test snapshots remain under qualification, including newer development artifacts
+at the same embedded package version. They do not replace the released bytes or
+reserve another stable version; a future changed stable artifact needs an explicit
+new version and candidate. This record does not publish or deploy anything.

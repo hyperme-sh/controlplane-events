@@ -72,3 +72,23 @@ become accepted through a provenance label. No stable baseline is recorded until
 that release exists. Stable publication remains closed without a valid baseline;
 first stable bootstrap and coordinated release qualification remain separate.
 No stable version, approval prerequisite or deployment is introduced here.
+
+## License
+
+Copyright 2026 controlplane-events contributors.
+
+This project's code and schemas are licensed under [Apache-2.0](LICENSE).
+Separately installed dependencies retain their own licenses. The wheel and
+source distribution include the license text and SPDX package metadata.
+
+Development artifact records live under `releases/qualification`: they retain
+tested bytes and contracts without reserving a stable version. A test prerelease
+is not an accepted stable baseline. Stable promotion still requires independent
+live stable-release provenance and an explicit candidate.
+
+The accepted baseline now records the actual immutable `v0.24.0` stable release,
+including its release ID, source commit and published asset digests. Historical
+test snapshots remain under qualification, including newer development artifacts
+at the same embedded package version. They do not replace the released bytes or
+reserve another stable version; a future changed stable artifact needs an explicit
+new version and candidate. This record does not publish or deploy anything.

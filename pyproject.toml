@@ -6,6 +6,8 @@ build-backend = "hatchling.build"
 name = "controlplane-events"
 version = "0.24.0"
 requires-python = ">=3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 dependencies = [
     "jsonschema>=4.24.0",
     "asyncpg>=0.30.0",
@@ -18,7 +20,7 @@ dependencies = [
 packages = ["src/controlplane_events"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/controlplane_events"]
+include = ["src/controlplane_events", "LICENSE"]
 
 [dependency-groups]
 dev = ["pytest>=8.4.0"]
