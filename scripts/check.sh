@@ -18,6 +18,7 @@ uv venv "$check_tmp/venv" --python 3.13
 uv export --frozen --no-emit-project --format requirements-txt --output-file "$check_tmp/requirements.txt" >/dev/null
 uv pip sync --python "$check_tmp/venv/bin/python" --require-hashes "$check_tmp/requirements.txt"
 uv pip install --python "$check_tmp/venv/bin/python" --no-deps "$check_tmp"/dist/*.whl
+"$check_tmp/venv/bin/python" -I "$root/scripts/verify_installed_contract.py" "$check_tmp/contract/contract.json"
 cp -R tests "$check_tmp/tests"
 (cd "$check_tmp" && "$check_tmp/venv/bin/python" -I -m pytest -c /dev/null tests -q)
 uv run --frozen python - "$check_tmp" <<'PYTHON'
@@ -31,6 +32,7 @@ uv run --frozen python scripts/verify_wheel.py "$check_tmp/rebuilt"
 uv run --frozen python scripts/export_release_contract.py "$check_tmp"/rebuilt/*.whl --output "$check_tmp/rebuilt-contract"
 cmp "$check_tmp/contract/contract.json" "$check_tmp/rebuilt-contract/contract.json"
 uv pip install --python "$check_tmp/venv/bin/python" --no-deps --reinstall "$check_tmp"/rebuilt/*.whl
+"$check_tmp/venv/bin/python" -I "$root/scripts/verify_installed_contract.py" "$check_tmp/contract/contract.json"
 (cd "$check_tmp" && "$check_tmp/venv/bin/python" -I -m pytest -c /dev/null tests -q)
 
 # Retain the exact validated bytes for the release channel; never rebuild them.
