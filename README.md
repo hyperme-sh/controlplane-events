@@ -108,3 +108,20 @@ publisher independently verifies a real immutable stable baseline and refuses
 qualification snapshots, even if a caller job reports success. Existing valid
 stable records are retained; no release, version change, deployment or human
 approval prerequisite is introduced by this correction.
+
+## Coordinated test bundles
+
+This service opts into the `next: 0.24.0` train through
+[.github/test-channel.json](.github/test-channel.json). Successful main validation
+publishes its exact retained `tested-dist` files as immutable `0.24.0-test.N`
+prerelease bundles. The pinned publisher verifies the run, source revision,
+configuration and original Actions artifact digest without executing caller code
+or receiving private dependency credentials. PRs validate without publication.
+
+This test-channel authorization supersedes the older main-publication restriction
+above. Package versions, dependency pins and accepted package baselines stay
+unchanged; existing stable package admission remains separate. Coordinated
+consumer/deployment selection must bind exact component commits and artifact
+digests, not matching repository-local counters. No stable promotion is automatic.
+Private jobs use debrunners and public jobs use hosted Ubuntu; no approval gates
+are introduced. Missing original evidence or publication collisions fail closed.
