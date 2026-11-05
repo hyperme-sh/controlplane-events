@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "kind": "qualified-test-snapshot",
+  "stable_release": false,
+  "former_record_path": "releases/accepted",
+  "live_release_id": 434610011,
+  "live_tag": "test-ae5aa86dc53b1a9e25ae4527fefeea6da6fb66ea",
+  "live_prerelease": true,
+  "reason": "Test artifact and consumer qualification does not reserve a stable package version."
+}

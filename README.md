@@ -57,6 +57,22 @@ new main revision. The publisher verifies the run, source, workflow and artifact
 digest independently of release metadata. Repository immutable releases must be
 enabled. See the [shared release contract](https://github.com/hyperme-sh/.github/blob/7749591fccd30d46ba9b0adabe82114001c9d0de/actions/release-channel/README.md).
 
+## Test qualification and stable acceptance
+
+GitHub `test-<commit>` prereleases are development snapshots. Their embedded
+package version does not reserve a stable version. Artifact and consumer evidence
+lives under `releases/qualification`; the current wheel binding is still checked
+by package CI, alongside any future explicit stable candidate. Earlier test
+snapshot receipts are preserved there with an explicit non-stable classification.
+
+`releases/accepted` and `SPANOPTICON_RELEASE_BASELINE_SHA` are reserved for an
+actual immutable stable GitHub release. The pinned shared guard verifies the live
+release channel, stable tag source and asset digests; a test snapshot cannot
+become accepted through a provenance label. No stable baseline is recorded until
+that release exists. Stable publication remains closed without a valid baseline;
+first stable bootstrap and coordinated release qualification remain separate.
+No stable version, approval prerequisite or deployment is introduced here.
+
 ## License
 
 Copyright 2026 controlplane-events contributors.
@@ -69,3 +85,10 @@ Development artifact records live under `releases/qualification`: they retain
 tested bytes and contracts without reserving a stable version. A test prerelease
 is not an accepted stable baseline. Stable promotion still requires independent
 live stable-release provenance and an explicit candidate.
+
+The accepted baseline now records the actual immutable `v0.24.0` stable release,
+including its release ID, source commit and published asset digests. Historical
+test snapshots remain under qualification, including newer development artifacts
+at the same embedded package version. They do not replace the released bytes or
+reserve another stable version; a future changed stable artifact needs an explicit
+new version and candidate. This record does not publish or deploy anything.
