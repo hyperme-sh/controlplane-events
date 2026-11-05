@@ -16,4 +16,11 @@ with zipfile.ZipFile(wheel) as archive:
     assert len(names) == len(set(names)) and runtime == set(expected), 'Wheel inventory differs'
     for name, data in expected.items():
         assert archive.read(name) == data, f'Wheel bytes differ: {name}'
+    from email.parser import BytesParser
+    metadata_name, = [name for name in names if name.endswith('.dist-info/METADATA')]
+    metadata = BytesParser().parsebytes(archive.read(metadata_name))
+    assert metadata['License-Expression'] == 'Apache-2.0'
+    assert metadata.get_all('License-File') == ['LICENSE']
+    license_name = metadata_name.removesuffix('METADATA') + 'licenses/LICENSE'
+    assert archive.read(license_name) == (root / 'LICENSE').read_bytes()
 print('Wheel runtime and resources match the current source')
