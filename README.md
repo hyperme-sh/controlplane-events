@@ -64,3 +64,8 @@ Copyright 2026 controlplane-events contributors.
 This project's code and schemas are licensed under [Apache-2.0](LICENSE).
 Separately installed dependencies retain their own licenses. The wheel and
 source distribution include the license text and SPDX package metadata.
+
+Development artifact records live under `releases/qualification`: they retain
+tested bytes and contracts without reserving a stable version. A test prerelease
+is not an accepted stable baseline. Stable promotion still requires independent
+live stable-release provenance and an explicit candidate.
