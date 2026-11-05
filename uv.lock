@@ -234,7 +234,7 @@ dependencies = [
 
 [[package]]
 name = "controlplane-events"
-version = "0.24.0"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "asyncpg" },

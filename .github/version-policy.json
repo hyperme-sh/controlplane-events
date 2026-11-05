@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "publication_authorized": false,
+  "versions": {
+    "pyproject.toml": "0.1.0"
+  },
+  "restorations": [
+    {
+      "repo": "controlplane-events",
+      "path": "pyproject.toml",
+      "name": "controlplane-events",
+      "version": "0.24.0",
+      "restore": {
+        "version": "0.1.0",
+        "commit": "00ea7d7e7d9eff7b472e5bf04f54ae7aa14a2b24"
+      }
+    }
+  ]
+}
