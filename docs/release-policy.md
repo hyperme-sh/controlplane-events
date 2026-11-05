@@ -39,3 +39,15 @@ approvals, CODEOWNERS approval requirements, or release/deployment approval gate
 unless the user explicitly requests that specific change. This includes production
 releases. Automated tests and advisory reviews are welcome; human approval
 prerequisites are not. GitHub plan upgrades are not release-adoption prerequisites.
+
+## Artifact qualification
+
+Package CI exports the complete event runtime, payload, routing and bundled schema
+bytes from the actual wheel without importing its code. This conservative contract
+requires byte equality for patches, including implementation-only changes; it is
+not a semantic compatibility analyzer. Distribution version metadata is excluded
+from the contract, while the complete wheel digest is bound to the candidate.
+CI checks source, fresh-wheel and rebuilt-sdist consumers, including tenant
+rejection and wire routing. PostgreSQL delivery, downstream service adoption and
+deployed-provider qualification remain separate. Accepted provenance records the
+immutable release and successful main-push artifact that supplied the baseline.
