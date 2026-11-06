@@ -131,6 +131,42 @@ def test_reset_without_a_response_is_classified_transient():
     assert _temporary_transport_failure(URLError(http.client.RemoteDisconnected()))
 
 
+def test_loopback_http_does_not_follow_an_implicit_proxy(monkeypatch):
+    seen = []
+
+    class Proxy(BaseHTTPRequestHandler):
+        def do_POST(self):
+            seen.append(self.headers.get("Authorization"))
+            self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *_args):
+            pass
+
+    proxy = ThreadingHTTPServer(("127.0.0.1", 0), Proxy)
+    thread = Thread(target=proxy.serve_forever, daemon=True)
+    thread.start()
+    closed = socket.socket()
+    closed.bind(("127.0.0.1", 0))
+    port = closed.getsockname()[1]
+    closed.close()
+    proxy_url = f"http://127.0.0.1:{proxy.server_port}"
+    monkeypatch.setenv("http_proxy", proxy_url)
+    monkeypatch.setenv("HTTP_PROXY", proxy_url)
+    monkeypatch.delenv("no_proxy", raising=False)
+    monkeypatch.delenv("NO_PROXY", raising=False)
+    sender = HttpEventSender(f"http://127.0.0.1:{port}/events", "producer-token", timeout=1)
+    try:
+        with pytest.raises(TransientDeliveryError):
+            sender(uuid.uuid4(), _envelope())
+        assert seen == []
+    finally:
+        proxy.shutdown()
+        proxy.server_close()
+        thread.join()
+
+
 def test_refused_connection_is_a_transient_delivery_failure():
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))

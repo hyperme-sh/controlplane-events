@@ -4,8 +4,9 @@ The destination authenticates the token as one producer, validates the envelope,
 and commits its inbox/domain transaction before returning a successful response.
 Never put credentials in a URL; redirects are refused to avoid forwarding them.
 Cleartext HTTP is limited to loopback hosts so a bearer token is not sent to a
-remote network peer. The long-running process retries temporary receiver failures
-with bounded backoff instead of exiting.
+remote network peer. Implicit environment proxies are disabled, so a loopback
+request is not redirected to ``http_proxy``. The long-running process retries
+temporary receiver failures with bounded backoff instead of exiting.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ import socket
 import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPHandler, HTTPSHandler, HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPHandler, HTTPSHandler, HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +204,10 @@ class HttpEventSender:
             "Idempotency-Key": str(event_id),
         })
         deadline_at = time.monotonic() + self.timeout
-        opener = build_opener(_NoRedirect(), _DeadlineHTTPHandler(deadline_at), _DeadlineHTTPSHandler(deadline_at))
+        # ProxyHandler({}) replaces urllib's env-proxy handler. Otherwise an
+        # http_proxy receives the loopback bearer and its 200 marks the outbox delivered.
+        opener = build_opener(ProxyHandler({}), _NoRedirect(), _DeadlineHTTPHandler(deadline_at),
+                              _DeadlineHTTPSHandler(deadline_at))
         try:
             with opener.open(request, timeout=self.timeout) as response:
                 # Async acceptance (202) is not proof of a committed receiver inbox.
