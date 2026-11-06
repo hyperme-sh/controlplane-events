@@ -205,6 +205,11 @@
       "schema": "payment.connect.access.changed.v1.json",
       "status": "existing"
     },
+    "payment.obligation.recorded.v1": {
+      "owner": "payment-service",
+      "schema": "payment.obligation.recorded.v1.json",
+      "status": "existing"
+    },
     "payment.succeeded.v1": {
       "owner": "payment-service",
       "schema": "payment.succeeded.v1.json",
