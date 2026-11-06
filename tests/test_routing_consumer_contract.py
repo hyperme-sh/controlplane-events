@@ -16,7 +16,7 @@ def test_payment_wire_round_trip_preserves_tenant_and_delivery_identity():
     tenant = uuid.uuid4()
     record = uuid.uuid4()
     envelope = ControlPlaneEventEnvelope(
-        event_type='payment.succeeded.v1', service='payment-service',
+        event_type='payment.succeeded.v3', service='payment-service',
         tenant_id=tenant, payload={'tenant_id': str(tenant), 'billing_record_id': str(record)},
     )
     received = []
@@ -26,7 +26,7 @@ def test_payment_wire_round_trip_preserves_tenant_and_delivery_identity():
 
     asyncio.run(dispatch_controlplane_envelope(
         envelope_to_bytes(envelope.model_dump(mode='json')),
-        {'payment.succeeded.v1': (PaymentSucceededPayload, handler)}, bus_event_id=123,
+        {'payment.succeeded.v3': (PaymentSucceededPayload, handler)}, bus_event_id=123,
     ))
     assert received == [(tenant, 123, record)]
 
@@ -35,7 +35,7 @@ def test_payment_wire_round_trip_preserves_tenant_and_delivery_identity():
 def test_invalid_or_unrouted_wire_never_reaches_consumer(invalid):
     tenant = uuid.uuid4()
     envelope = ControlPlaneEventEnvelope(
-        event_type='payment.succeeded.v1', service='payment-service',
+        event_type='payment.succeeded.v3', service='payment-service',
         tenant_id=tenant, payload={'tenant_id': str(tenant), 'billing_record_id': str(uuid.uuid4())},
     )
     if invalid == 'tenant':
@@ -52,6 +52,6 @@ def test_invalid_or_unrouted_wire_never_reaches_consumer(invalid):
         wire = b'invalid json'
     elif invalid == 'empty':
         wire = None
-    routes = {} if invalid == 'route' else {'payment.succeeded.v1': (PaymentSucceededPayload, handler)}
+    routes = {} if invalid == 'route' else {'payment.succeeded.v3': (PaymentSucceededPayload, handler)}
     asyncio.run(dispatch_controlplane_envelope(wire, routes))
     assert received == []

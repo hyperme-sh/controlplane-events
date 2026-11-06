@@ -34,7 +34,7 @@ async def test_outbox_rollback_writes_no_event(migrated_postgres: str) -> None:
         publisher.publish_in_session(
             session,
             tenant_id=uuid.uuid4(),
-            event_type="payment.succeeded.v1",
+            event_type="payment.succeeded.v3",
             payload={"billing_record_id": str(uuid.uuid4())},
         )
         session.rollback()
@@ -44,7 +44,7 @@ async def test_outbox_rollback_writes_no_event(migrated_postgres: str) -> None:
         event_id = publisher.publish_in_session(
             session,
             tenant_id=None,
-            event_type="payment.succeeded.v1",
+            event_type="payment.succeeded.v3",
             payload={"billing_record_id": str(uuid.uuid4())},
         )
         session.commit()

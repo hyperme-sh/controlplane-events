@@ -16,12 +16,12 @@ def test_all_registered_wire_schemas_are_valid(event):
 def test_payment_consumer_contract_rejects_bad_fields_and_tenant_mismatch():
     tid = uuid.uuid4()
     payload = {'tenant_id':str(tid), 'billing_record_id':str(uuid.uuid4())}
-    validate_event_payload('payment.succeeded.v1', payload)
+    validate_event_payload('payment.succeeded.v3', payload)
     for bad in ({**payload, 'amount_cents':-1}, {**payload, 'tenant_id':'not-a-uuid'},
                 {**payload, 'prompt':'unpublished'}, {'tenant_id':str(tid)}):
         with pytest.raises(ValidationError):
-            validate_event_payload('payment.succeeded.v1', bad)
-    envelope = ControlPlaneEventEnvelope(event_type='payment.succeeded.v1', service='payment-service', tenant_id=tid, payload=payload)
+            validate_event_payload('payment.succeeded.v3', bad)
+    envelope = ControlPlaneEventEnvelope(event_type='payment.succeeded.v3', service='payment-service', tenant_id=tid, payload=payload)
     validate_event_envelope(envelope)
     with pytest.raises(ValueError, match='shared|controlplane.events.v1'):
         validate_event_envelope(envelope, topic='another-topic')
@@ -48,10 +48,18 @@ def test_decimal_wire_cost_accepts_quantized_zero_and_exponents():
 def test_payment_v2_is_reserved_and_excludes_fine_location():
     payload = {'tenant_id':str(uuid.uuid4()), 'billing_record_id':str(uuid.uuid4()),
                'billing_country':'US', 'billing_subdivision':'US-TN'}
-    validate_event_payload('payment.succeeded.v2', payload)
-    assert event_contracts()['events']['payment.succeeded.v2']['status'] == 'reserved'
-    validate_event_payload('payment.succeeded.v2', {**payload, 'billing_country':'CA', 'billing_subdivision':None})
+    validate_event_payload('payment.succeeded.v4', payload)
+    assert event_contracts()['events']['payment.succeeded.v4']['status'] == 'reserved'
+    validate_event_payload('payment.succeeded.v4', {**payload, 'billing_country':'CA', 'billing_subdivision':None})
     with pytest.raises(ValidationError):
-        validate_event_payload('payment.succeeded.v2', {**payload, 'billing_subdivision':None})
+        validate_event_payload('payment.succeeded.v4', {**payload, 'billing_subdivision':None})
     with pytest.raises(ValidationError):
-        validate_event_payload('payment.succeeded.v2', {**payload, 'postal_code':'12345'})
+        validate_event_payload('payment.succeeded.v4', {**payload, 'postal_code':'12345'})
+
+@pytest.mark.parametrize('event', [
+    'payment.succeeded.v1', 'payment.succeeded.v2',
+    'billing.record.created.v1', 'hypermesh.payout.due.v1',
+])
+def test_retired_private_contracts_cannot_enter_public_event_bus(event):
+    with pytest.raises(KeyError):
+        validate_event_payload(event, {})

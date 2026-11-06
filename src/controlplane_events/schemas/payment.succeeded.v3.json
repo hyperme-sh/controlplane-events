@@ -1,22 +1,8 @@
 {
-  "$id": "urn:controlplane:event:payment.succeeded.v2",
+  "$id": "urn:controlplane:event:payment.succeeded.v3",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Reserved v2 contract; producer rollout belongs to the payment packages.",
-  "else": {
-    "properties": {
-      "billing_subdivision": {
-        "type": "null"
-      }
-    }
-  },
-  "if": {
-    "properties": {
-      "billing_country": {
-        "const": "US"
-      }
-    }
-  },
+  "description": "payment.succeeded.v3 \u2014 opaque processor references only.",
   "properties": {
     "amount_cents": {
       "anyOf": [
@@ -31,27 +17,10 @@
       "default": null,
       "title": "Amount Cents"
     },
-    "billing_country": {
-      "pattern": "^[A-Z]{2}$",
-      "title": "Billing Country",
-      "type": "string"
-    },
     "billing_record_id": {
       "format": "uuid",
       "title": "Billing Record Id",
       "type": "string"
-    },
-    "billing_subdivision": {
-      "anyOf": [
-        {
-          "pattern": "^US-[A-Z]{2}$",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "title": "Billing Subdivision"
     },
     "currency": {
       "anyOf": [
@@ -66,7 +35,7 @@
       "default": null,
       "title": "Currency"
     },
-    "stripe_payment_intent_id": {
+    "processor_reference": {
       "anyOf": [
         {
           "maxLength": 255,
@@ -77,9 +46,9 @@
         }
       ],
       "default": null,
-      "title": "Stripe Payment Intent Id"
+      "title": "Processor Reference"
     },
-    "stripe_session_id": {
+    "processor_session_reference": {
       "anyOf": [
         {
           "maxLength": 255,
@@ -90,7 +59,7 @@
         }
       ],
       "default": null,
-      "title": "Stripe Session Id"
+      "title": "Processor Session Reference"
     },
     "tenant_id": {
       "format": "uuid",
@@ -113,20 +82,11 @@
   },
   "required": [
     "tenant_id",
-    "billing_record_id",
-    "billing_country",
-    "billing_subdivision"
+    "billing_record_id"
   ],
-  "then": {
-    "properties": {
-      "billing_subdivision": {
-        "type": "string"
-      }
-    }
-  },
-  "title": "PaymentSucceededV2Payload",
+  "title": "PaymentSucceededPayload",
   "type": "object",
-  "x-event-type": "payment.succeeded.v2",
+  "x-event-type": "payment.succeeded.v3",
   "x-owner": "payment-service",
   "x-topic": "controlplane.events.v1"
 }

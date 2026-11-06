@@ -18,8 +18,17 @@ fi
 done
 uv venv "$check_tmp/venv" --python 3.13
 uv export --frozen --no-emit-project --format requirements-txt --output-file "$check_tmp/requirements.txt" >/dev/null
-uv pip sync --python "$check_tmp/venv/bin/python" --require-hashes "$check_tmp/requirements.txt"
-uv pip install --python "$check_tmp/venv/bin/python" --no-deps "$check_tmp"/dist/*.whl
+# Normal resolution retains hash enforcement for every registry and local artifact.
+write_installer_input() {
+  python3 - "$check_tmp/requirements.txt" "$1" "$check_tmp/install.txt" <<'PYTHON'
+import hashlib, pathlib, sys
+requirements, wheel, output = map(pathlib.Path, sys.argv[1:])
+output.write_text(requirements.read_text() + "\n" + wheel.resolve().as_uri()
+                  + " --hash=sha256:" + hashlib.sha256(wheel.read_bytes()).hexdigest() + "\n")
+PYTHON
+}
+write_installer_input "$check_tmp"/dist/*.whl
+uv pip install --python "$check_tmp/venv/bin/python" --require-hashes -r "$check_tmp/install.txt"
 "$check_tmp/venv/bin/python" -I "$root/scripts/verify_installed_contract.py" "$check_tmp/contract/contract.json"
 cp -R tests "$check_tmp/tests"
 (cd "$check_tmp" && "$check_tmp/venv/bin/python" -I -m pytest -c /dev/null tests -q --junitxml="$check_tmp/wheel.xml")
@@ -33,7 +42,8 @@ uv build --wheel "$check_tmp"/sdist/* --no-sources --out-dir "$check_tmp/rebuilt
 uv run --frozen python scripts/verify_wheel.py "$check_tmp/rebuilt"
 uv run --frozen python scripts/export_release_contract.py "$check_tmp"/rebuilt/*.whl --output "$check_tmp/rebuilt-contract"
 cmp "$check_tmp/contract/contract.json" "$check_tmp/rebuilt-contract/contract.json"
-uv pip install --python "$check_tmp/venv/bin/python" --no-deps --reinstall "$check_tmp"/rebuilt/*.whl
+write_installer_input "$check_tmp"/rebuilt/*.whl
+uv pip install --python "$check_tmp/venv/bin/python" --require-hashes --reinstall -r "$check_tmp/install.txt"
 "$check_tmp/venv/bin/python" -I "$root/scripts/verify_installed_contract.py" "$check_tmp/contract/contract.json"
 (cd "$check_tmp" && "$check_tmp/venv/bin/python" -I -m pytest -c /dev/null tests -q --junitxml="$check_tmp/sdist.xml")
 

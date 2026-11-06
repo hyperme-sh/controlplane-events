@@ -6,14 +6,14 @@ from pydantic import BaseModel, Field
 
 
 class PaymentSucceededPayload(BaseModel):
-    """payment.succeeded.v1 — no card numbers; Stripe ids only."""
+    """payment.succeeded.v3 — opaque processor references only."""
 
     model_config = {"extra": "forbid", "str_strip_whitespace": True}
 
     tenant_id: uuid.UUID
     billing_record_id: uuid.UUID
-    stripe_session_id: str | None = Field(default=None, max_length=255)
-    stripe_payment_intent_id: str | None = Field(default=None, max_length=255)
+    processor_session_reference: str | None = Field(default=None, max_length=255)
+    processor_reference: str | None = Field(default=None, max_length=255)
     amount_cents: int | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, max_length=8)
     user_id: uuid.UUID | None = None
@@ -38,8 +38,8 @@ class BudgetAllocatedPayload(BaseModel):
         return self.model_dump(mode="json")
 
 
-class PaymentSucceededV2Payload(PaymentSucceededPayload):
-    """Reserved v2 contract; producer rollout belongs to the payment packages."""
+class PaymentSucceededV4Payload(PaymentSucceededPayload):
+    """Reserved v4 jurisdiction contract; producer rollout belongs to the payment packages."""
 
     model_config = {"extra": "forbid", "str_strip_whitespace": True,
                     "json_schema_extra": {
