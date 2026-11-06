@@ -14,7 +14,6 @@ import errno
 import http.client
 import io
 import ipaddress
-import json
 import logging
 import math
 import socket
@@ -196,9 +195,9 @@ class HttpEventSender:
 
     def __call__(self, event_id, envelope):
         from controlplane_events.contracts import validate_event_envelope
+        from controlplane_events.delivery import delivery_body
         validate_event_envelope(envelope)
-        body = json.dumps({"event_id": str(event_id), "envelope": envelope.model_dump(mode="json")},
-                          separators=(",", ":")).encode()
+        body = delivery_body(event_id, envelope)
         request = Request(self.url, data=body, method="POST", headers={
             "Content-Type": "application/json", "Authorization": "Bearer " + self.token,
             "Idempotency-Key": str(event_id),
@@ -279,6 +278,7 @@ def main():
     from pathlib import Path
     import uuid
     from sqlalchemy import create_engine
+    from controlplane_events.store import normalize_sync_url
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--database-url-file', type=Path, required=True)
@@ -288,7 +288,7 @@ def main():
     parser.add_argument('--once', action='store_true')
     args = parser.parse_args()
     sender = HttpEventSender(args.destination, args.token_file.read_text().strip())
-    engine = create_engine(args.database_url_file.read_text().strip(), pool_pre_ping=True)
+    engine = create_engine(normalize_sync_url(args.database_url_file.read_text()), pool_pre_ping=True)
     try:
         run_relay(engine, sender, args.tenant, once=args.once)
     finally:

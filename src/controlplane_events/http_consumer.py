@@ -45,7 +45,11 @@ class HttpRoutingConsumer:
         payload=model.model_validate(envelope.payload)
         serialized=envelope.model_dump(mode='json')
         async with self.engine.begin() as db:
+            await db.execute(text('INSERT INTO service_tenants(tenant_id) VALUES (:tenant) ON CONFLICT DO NOTHING'),
+                             {'tenant':envelope.tenant_id})
+        async with self.engine.begin() as db:
             await db.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(envelope.tenant_id)})
+            await db.execute(text("SELECT set_config('app.skip_tenant_remember','1',true)"))
             await db.execute(text('SELECT pg_advisory_xact_lock(:key)'),
                              {'key':int.from_bytes(hashlib.sha256(event_id.bytes).digest()[:8],signed=True)})
             inserted=await db.scalar(text('''INSERT INTO event_inbox(event_id,tenant_id,envelope)
@@ -66,14 +70,16 @@ def consumer_router():
     import os
     from pathlib import Path
     from fastapi import APIRouter,HTTPException,Request
-    from controlplane_events.http_inbox import Delivery
+    from controlplane_events.http_inbox import authenticated_delivery
     router=APIRouter()
 
     @router.post('/internal/events')
-    async def receive_event(request:Request,delivery:Delivery):
+    async def receive_event(request:Request):
         path=os.environ.get('EVENT_PRODUCER_TOKENS_FILE')
         if not path:raise HTTPException(503,'Event credentials not configured')
-        expected=json.loads(Path(path).read_text()).get(delivery.envelope.service)
+        tokens=json.loads(Path(path).read_text())
+        delivery=await authenticated_delivery(request, tokens)
+        expected=tokens.get(delivery.envelope.service)
         if not expected or not hmac.compare_digest(request.headers.get('authorization','').encode(),('Bearer '+expected).encode()):
             raise HTTPException(401,'Producer credential required')
         if not producer_owns_event(delivery.envelope.service, delivery.envelope.event_type):

@@ -122,13 +122,14 @@ def main():
     import os
     from pathlib import Path
     from sqlalchemy import create_engine
+    from controlplane_events.store import normalize_sync_url
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--database-url-file',type=Path,required=True)
     parser.add_argument('--tenant',type=uuid.UUID,required=True)
     args=parser.parse_args()
     if os.environ.get('OWNER_DATA_POLICY') != 'TEST':
         raise RuntimeError('Private cleanup worker requires explicit TEST configuration')
-    engine=create_engine(args.database_url_file.read_text().strip())
+    engine=create_engine(normalize_sync_url(args.database_url_file.read_text()))
     try:
         print(json.dumps({'tenant_id':str(args.tenant),'deleted':purge_test_tenant(engine,args.tenant)},sort_keys=True))
     finally:

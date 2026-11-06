@@ -96,11 +96,48 @@ def test_instance_binding_mismatch_refuses_cleanup(owner):
             db.execute(text('UPDATE test_authority.database_identity SET cluster_identifier=:v'),{'v':original})
 
 
-def test_http_inbox_auth_replay_and_conflict(owner):
+@pytest.mark.asyncio
+async def test_unknown_bearer_is_rejected_before_the_body_is_read():
+    from fastapi import HTTPException
+    from controlplane_events.http_inbox import MAX_DELIVERY_BYTES, authenticated_delivery, read_limited_body
+
+    class Closed:
+        headers = {'authorization': 'Bearer wrong', 'content-length': str(MAX_DELIVERY_BYTES + 1)}
+        async def stream(self):
+            raise AssertionError('body read before authentication')
+            yield b''
+
+    with pytest.raises(HTTPException) as denied:
+        await authenticated_delivery(Closed(), {'payment-service': 'test-producer'})
+    assert denied.value.status_code == 401
+
+    class Chunked:
+        headers = {'authorization': 'Bearer test-producer'}
+        async def stream(self):
+            yield b'{' * 16
+            yield b'x' * MAX_DELIVERY_BYTES
+
+    with pytest.raises(HTTPException) as oversized:
+        await read_limited_body(Chunked())
+    assert oversized.value.status_code == 413
+    with pytest.raises(HTTPException) as rejected:
+        await authenticated_delivery(Chunked(), {'payment-service': 'test-producer'})
+    assert rejected.value.status_code == 413
+
+
+def test_http_inbox_auth_replay_and_conflict(owner, monkeypatch):
+    import threading
     from datetime import datetime,timezone
     from fastapi.testclient import TestClient
+    from controlplane_events import http_inbox
     from controlplane_events.http_inbox import create_app
     from controlplane_events.inbox import INBOX_DDL
+    ids={}
+    real_receive=http_inbox.receive
+    def spy(*args, **kwargs):
+        ids['persist']=threading.get_ident()
+        return real_receive(*args, **kwargs)
+    monkeypatch.setattr(http_inbox, 'receive', spy)
     engine,_,_=owner
     migrate(engine,revision='inbox1',ddl=INBOX_DDL)
     tenant,event_id=uuid.uuid4(),uuid.uuid4()
@@ -111,11 +148,18 @@ def test_http_inbox_auth_replay_and_conflict(owner):
                    'billing_record_id':str(uuid.uuid4()),'source_event_id':str(uuid.uuid4()),
                    'net_usdc_atoms':880000}}}
     headers={'Authorization':'Bearer test-producer','Idempotency-Key':str(event_id)}
-    with TestClient(create_app(engine=engine,producers={'payment-service':'test-producer'})) as client:
+    app=create_app(engine=engine,producers={'payment-service':'test-producer'})
+    @app.get('/loop-thread')
+    async def loop_thread():
+        ids['loop']=threading.get_ident()
+        return {'ok':True}
+    with TestClient(app) as client:
         assert client.post('/events',json=body).status_code==401
         first=client.post('/events',json=body,headers=headers)
         assert first.status_code==200,first.text
         assert first.json()['duplicate'] is False
+        assert client.get('/loop-thread').status_code==200
+        assert ids['persist']!=ids['loop']
         assert client.post('/events',json=body,headers=headers).json()['duplicate'] is True
         body['envelope']['payload']['net_usdc_atoms']+=1
         assert client.post('/events',json=body,headers=headers).status_code==409
@@ -131,6 +175,11 @@ def test_http_inbox_auth_replay_and_conflict(owner):
         rejected=client.post('/events',json=foreign,headers={
             'Authorization':'Bearer test-producer','Idempotency-Key':str(foreign_id)})
         assert rejected.status_code==403,rejected.text
+        from controlplane_events.http_inbox import MAX_DELIVERY_BYTES
+        unauthenticated=client.post('/events', content=b'{}', headers={'content-length': str(MAX_DELIVERY_BYTES + 1)})
+        assert unauthenticated.status_code==401
+        too_large=client.post('/events', content=b'x' * (MAX_DELIVERY_BYTES + 1), headers={'Authorization': 'Bearer test-producer'})
+        assert too_large.status_code==413, too_large.text
     with engine.begin() as db:
         db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(tenant)})
         assert db.scalar(text('SELECT count(*) FROM event_inbox'))==1
@@ -224,6 +273,52 @@ async def test_reused_event_identity_is_rejected_before_the_handler(owner):
         assert db.scalar(text('SELECT count(*) FROM event_inbox'))==0
 
 
+@pytest.mark.asyncio
+async def test_handler_domain_write_does_not_wait_on_the_receipt(owner):
+    import asyncio
+    from pydantic import BaseModel
+    from controlplane_events.envelope import ControlPlaneEventEnvelope
+    from controlplane_events.http_consumer import HttpRoutingConsumer
+    from controlplane_events.inbox import INBOX_DDL
+    engine,_,role=owner
+    migrate(engine,revision='inbox-lock',ddl=INBOX_DDL+DDL)
+    class Payload(BaseModel):
+        tenant_id:uuid.UUID
+        lease_id:uuid.UUID
+        billing_record_id:uuid.UUID
+        source_event_id:uuid.UUID
+        net_usdc_atoms:int
+    async def handle(envelope,payload,delivery_id):
+        def write():
+            with engine.begin() as db:
+                db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(envelope.tenant_id)})
+                db.execute(text("INSERT INTO records(id,tenant_id,value) VALUES (:id,:t,'domain')"),
+                           {'id':uuid.uuid4(),'t':envelope.tenant_id})
+        await asyncio.to_thread(write)
+    consumer=HttpRoutingConsumer(os.environ['OWNED_OUTBOX_DATABASE_URL'],
+        {'payment.obligation.recorded.v1':(Payload,handle)})
+    @event.listens_for(consumer.engine.sync_engine,'connect')
+    def scope(connection,_):
+        with connection.cursor() as cursor:
+            cursor.execute(f'SET ROLE {role}')
+            cursor.execute(f'SET search_path TO {role}')
+        connection.commit()
+    tenant=uuid.uuid4()
+    payload=Payload(tenant_id=tenant,lease_id=uuid.uuid4(),billing_record_id=uuid.uuid4(),
+                    source_event_id=uuid.uuid4(),net_usdc_atoms=10)
+    envelope=ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1',service='payment-service',
+                                       tenant_id=tenant,payload=payload.model_dump(mode='json'))
+    try:
+        await consumer.start()
+        assert await asyncio.wait_for(consumer.receive(uuid.uuid4(),envelope),timeout=5)
+    finally:
+        await consumer.stop()
+    with engine.begin() as db:
+        db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(tenant)})
+        assert db.scalar(text('SELECT count(*) FROM event_inbox'))==1
+        assert db.scalar(text('SELECT count(*) FROM records'))==1
+
+
 def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, monkeypatch):
     import json
     from datetime import datetime, timezone
@@ -289,6 +384,14 @@ def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, 
             rejected = client.post('/internal/events', json=foreign, headers={
                 'Authorization': 'Bearer pay-token', 'Idempotency-Key': str(foreign_id)})
             assert rejected.status_code == 403, rejected.text
+            assert calls == [('payment.obligation.recorded.v1', payment_id)]
+            from controlplane_events.http_inbox import MAX_DELIVERY_BYTES
+            unauthenticated = client.post('/internal/events', content=b'{}', headers={
+                'content-length': str(MAX_DELIVERY_BYTES + 1)})
+            assert unauthenticated.status_code == 401
+            too_large = client.post('/internal/events', content=b'x' * (MAX_DELIVERY_BYTES + 1), headers={
+                'Authorization': 'Bearer pay-token'})
+            assert too_large.status_code == 413, too_large.text
             assert calls == [('payment.obligation.recorded.v1', payment_id)]
     finally:
         import asyncio
