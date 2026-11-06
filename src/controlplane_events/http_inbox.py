@@ -1,5 +1,6 @@
 """HTTP transport for the events owner's inbox; install the http extra."""
 from contextlib import asynccontextmanager
+import asyncio
 import hmac
 import json
 import os
@@ -12,6 +13,7 @@ from sqlalchemy import create_engine, text
 from controlplane_events.envelope import ControlPlaneEventEnvelope
 from controlplane_events.http_consumer import producer_owns_event
 from controlplane_events.inbox import receive
+from controlplane_events.store import normalize_sync_url
 
 
 class Delivery(BaseModel):
@@ -67,7 +69,7 @@ def create_app(*, engine=None, producers=None):
     owned_engine=engine is None
     @asynccontextmanager
     async def lifespan(app):
-        app.state.engine=engine or create_engine(Path(os.environ['DATABASE_URL_FILE']).read_text().strip(),pool_pre_ping=True)
+        app.state.engine=engine or create_engine(normalize_sync_url(Path(os.environ['DATABASE_URL_FILE']).read_text()),pool_pre_ping=True)
         app.state.sync_engine=app.state.engine
         app.state.producers=producers if producers is not None else json.loads(Path(os.environ['EVENT_PRODUCER_TOKENS_FILE']).read_text())
         if not app.state.producers or any(not key or not value for key,value in app.state.producers.items()):
@@ -96,7 +98,9 @@ def create_app(*, engine=None, producers=None):
         if request.headers.get('idempotency-key') != str(delivery.event_id):
             raise HTTPException(400,'Idempotency key must match event identity')
         try:
-            created=receive(request.app.state.engine,delivery.event_id,delivery.envelope,producer=delivery.envelope.service)
+            created=await asyncio.to_thread(
+                receive, request.app.state.engine, delivery.event_id, delivery.envelope,
+                producer=delivery.envelope.service)
         except ValueError as exc:
             raise HTTPException(409,str(exc)) from exc
         return {'event_id':str(delivery.event_id),'committed':True,'duplicate':not created}

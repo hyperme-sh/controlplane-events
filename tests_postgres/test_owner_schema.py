@@ -125,11 +125,19 @@ async def test_unknown_bearer_is_rejected_before_the_body_is_read():
     assert rejected.value.status_code == 413
 
 
-def test_http_inbox_auth_replay_and_conflict(owner):
+def test_http_inbox_auth_replay_and_conflict(owner, monkeypatch):
+    import threading
     from datetime import datetime,timezone
     from fastapi.testclient import TestClient
+    from controlplane_events import http_inbox
     from controlplane_events.http_inbox import create_app
     from controlplane_events.inbox import INBOX_DDL
+    ids={}
+    real_receive=http_inbox.receive
+    def spy(*args, **kwargs):
+        ids['persist']=threading.get_ident()
+        return real_receive(*args, **kwargs)
+    monkeypatch.setattr(http_inbox, 'receive', spy)
     engine,_,_=owner
     migrate(engine,revision='inbox1',ddl=INBOX_DDL)
     tenant,event_id=uuid.uuid4(),uuid.uuid4()
@@ -140,11 +148,18 @@ def test_http_inbox_auth_replay_and_conflict(owner):
                    'billing_record_id':str(uuid.uuid4()),'source_event_id':str(uuid.uuid4()),
                    'net_usdc_atoms':880000}}}
     headers={'Authorization':'Bearer test-producer','Idempotency-Key':str(event_id)}
-    with TestClient(create_app(engine=engine,producers={'payment-service':'test-producer'})) as client:
+    app=create_app(engine=engine,producers={'payment-service':'test-producer'})
+    @app.get('/loop-thread')
+    async def loop_thread():
+        ids['loop']=threading.get_ident()
+        return {'ok':True}
+    with TestClient(app) as client:
         assert client.post('/events',json=body).status_code==401
         first=client.post('/events',json=body,headers=headers)
         assert first.status_code==200,first.text
         assert first.json()['duplicate'] is False
+        assert client.get('/loop-thread').status_code==200
+        assert ids['persist']!=ids['loop']
         assert client.post('/events',json=body,headers=headers).json()['duplicate'] is True
         body['envelope']['payload']['net_usdc_atoms']+=1
         assert client.post('/events',json=body,headers=headers).status_code==409

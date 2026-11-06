@@ -48,10 +48,11 @@ def main(package, revision):
     from importlib.resources import files
     from pathlib import Path
     from sqlalchemy import create_engine
+    from controlplane_events.store import normalize_sync_url
     parser=argparse.ArgumentParser()
     parser.add_argument('--database-url-file',type=Path,required=True)
     args=parser.parse_args()
-    engine=create_engine(args.database_url_file.read_text().strip())
+    engine=create_engine(normalize_sync_url(args.database_url_file.read_text()))
     try:
         migrate(engine,revision=revision,ddl=files(package).joinpath('migrations/0001.sql').read_text())
     finally:

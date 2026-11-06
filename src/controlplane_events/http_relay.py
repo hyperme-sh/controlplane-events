@@ -279,6 +279,7 @@ def main():
     from pathlib import Path
     import uuid
     from sqlalchemy import create_engine
+    from controlplane_events.store import normalize_sync_url
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--database-url-file', type=Path, required=True)
@@ -288,7 +289,7 @@ def main():
     parser.add_argument('--once', action='store_true')
     args = parser.parse_args()
     sender = HttpEventSender(args.destination, args.token_file.read_text().strip())
-    engine = create_engine(args.database_url_file.read_text().strip(), pool_pre_ping=True)
+    engine = create_engine(normalize_sync_url(args.database_url_file.read_text()), pool_pre_ping=True)
     try:
         run_relay(engine, sender, args.tenant, once=args.once)
     finally:
