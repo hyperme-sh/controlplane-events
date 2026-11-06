@@ -5,8 +5,9 @@ HTTP parameter nor an environment variable can grant TEST authority.
 """
 from __future__ import annotations
 
+import json
 import uuid
-from sqlalchemy import MetaData, select, text
+from sqlalchemy import MetaData, text
 
 
 _TEST_NETWORKS = {'test', 'test-network', 'testnet', 'sandbox', 'devnet',
@@ -42,27 +43,77 @@ def purge_test_tenant(engine, tenant_id: uuid.UUID) -> dict[str, int]:
                    {'identity':f"{role['nspname']}:{tenant_id}"})
         metadata = MetaData(schema=role['nspname'])
         metadata.reflect(bind=db, resolve_fks=False)
-        # Validate the entire bounded batch before the first deletion. Retention
-        # and holds are deliberately irrelevant, but live ancestry is not.
+        # Lock and validate the bounded batch before the first deletion. A later
+        # DELETE names those ctids, so a row committed after validation is kept.
         count=0
-        for table in metadata.tables.values():
+        planned={}
+        for table in metadata.sorted_tables:
             if 'tenant_id' not in table.c:
                 continue
-            rows=db.execute(select(table).where(table.c.tenant_id==tenant_id).limit(_MAX_ROWS+1)).mappings()
-            for row in rows:
+            ctids, documents=_lock_rows(db, table, 't.tenant_id = :tenant',
+                                        {'tenant': tenant_id}, _MAX_ROWS - count + 1)
+            kept=[]
+            for ctid, document in zip(ctids, documents):
                 count+=1
                 if count>_MAX_ROWS:
                     raise ValueError('TEST cleanup batch exceeds the bounded row limit')
-                _reject_live(dict(row))
+                _reject_live(document)
+                kept.append(ctid)
+            planned[table.key]=(table, kept)
+        tenants = metadata.tables.get(f"{role['nspname']}.tenants")
+        tenant_ctids=[]
+        if tenants is not None:
+            tenant_ctids, documents=_lock_rows(db, tenants, 't.id = :tenant', {'tenant': tenant_id}, 2)
+            for document in documents:
+                _reject_live(document)
         deleted = {}
         for table in reversed(metadata.sorted_tables):
-            if 'tenant_id' in table.c:
-                deleted[table.name] = db.execute(table.delete().where(table.c.tenant_id == tenant_id)).rowcount
+            item=planned.get(table.key)
+            if item is not None:
+                locked_table, ctids=item
+                deleted[locked_table.name]=_delete_ctids(db, locked_table, ctids)
         # The user owner's tenant row is keyed by id rather than tenant_id.
-        tenants = metadata.tables.get(f"{role['nspname']}.tenants")
         if tenants is not None:
-            deleted['tenants'] = db.execute(tenants.delete().where(tenants.c.id == tenant_id)).rowcount
+            deleted['tenants']=_delete_ctids(db, tenants, tenant_ctids)
         return deleted
+
+
+def _qualified(table, db):
+    preparer=db.dialect.identifier_preparer
+    name=preparer.quote(table.name)
+    if table.schema:
+        return preparer.quote_schema(table.schema)+'.'+name
+    return name
+
+
+def _document(value):
+    if isinstance(value, str):
+        return json.loads(value)
+    if isinstance(value, (bytes, bytearray)):
+        return json.loads(value.decode())
+    return value
+
+
+def _lock_rows(db, table, where_sql, params, limit):
+    qualified=_qualified(table, db)
+    rows=db.execute(text(f'''
+        SELECT t.ctid::text AS ctid, to_jsonb(t.*) AS document
+        FROM {qualified} AS t
+        WHERE {where_sql}
+        ORDER BY t.ctid
+        LIMIT :limit
+        FOR UPDATE OF t
+    '''), {**params, 'limit': limit}).mappings().all()
+    return [row['ctid'] for row in rows], [_document(row['document']) for row in rows]
+
+
+def _delete_ctids(db, table, ctids):
+    if not ctids:
+        return 0
+    qualified=_qualified(table, db)
+    params={f'c{index}': ctid for index, ctid in enumerate(ctids)}
+    values=', '.join(f'CAST(:c{index} AS tid)' for index in range(len(ctids)))
+    return db.execute(text(f'DELETE FROM {qualified} WHERE ctid = ANY (ARRAY[{values}])'), params).rowcount
 
 
 def main():

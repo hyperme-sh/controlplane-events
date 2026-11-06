@@ -8,8 +8,15 @@ import uuid
 from sqlalchemy import bindparam,text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import create_async_engine
-from controlplane_events.contracts import validate_event_envelope
+from controlplane_events.contracts import event_contracts, validate_event_envelope
 from controlplane_events.store import normalize_async_url
+
+
+def producer_owns_event(service, event_type):
+    """The authenticated producer may submit only events registered to that owner."""
+    entry = event_contracts()['events'].get(event_type)
+    owner = entry.get('owner') if isinstance(entry, dict) else None
+    return isinstance(service, str) and bool(service) and owner == service
 
 
 class HttpRoutingConsumer:
@@ -26,6 +33,8 @@ class HttpRoutingConsumer:
 
     async def receive(self,event_id,envelope):
         validate_event_envelope(envelope)
+        if not producer_owns_event(envelope.service, envelope.event_type):
+            raise ValueError('Producer cannot submit an event owned by another service')
         if envelope.tenant_id is None or envelope.event_type not in self.routes:
             raise ValueError('No tenant-scoped handler for this event')
         event_id=uuid.UUID(str(event_id))
@@ -63,6 +72,8 @@ def consumer_router():
         expected=json.loads(Path(path).read_text()).get(delivery.envelope.service)
         if not expected or not hmac.compare_digest(request.headers.get('authorization','').encode(),('Bearer '+expected).encode()):
             raise HTTPException(401,'Producer credential required')
+        if not producer_owns_event(delivery.envelope.service, delivery.envelope.event_type):
+            raise HTTPException(403,'Producer cannot submit an event owned by another service')
         if request.headers.get('idempotency-key')!=str(delivery.event_id):
             raise HTTPException(400,'Idempotency key must match event identity')
         consumer=getattr(request.app.state,'event_consumer',None)

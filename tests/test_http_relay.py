@@ -1,16 +1,26 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from threading import Thread
+from threading import Event, Thread
 import json
+import socket
+import time
 import uuid
 import pytest
 from controlplane_events.envelope import ControlPlaneEventEnvelope
-from controlplane_events.http_relay import HttpEventSender
+from controlplane_events.http_relay import HttpEventSender, TransientDeliveryError, run_relay
 
 
-@pytest.mark.parametrize("url", ["file:///tmp/outbox", "https://user:pass@host/", "https://host/?token=x", "https://host/#x"])
+@pytest.mark.parametrize("url", ["file:///tmp/outbox", "https://user:pass@host/", "https://host/?token=x",
+                                  "https://host/#x", "http://example.com/events", "http://192.0.2.10/events",
+                                  "http://[2001:db8::10]/events"])
 def test_destination_rejects_credentials_and_non_http(url):
     with pytest.raises(ValueError):
         HttpEventSender(url, "token")
+
+
+@pytest.mark.parametrize("url", ["https://example.com/events", "http://127.0.0.1/events", "http://localhost/events",
+                                  "http://LOCALHOST/events", "http://[::1]/events", "http://127.255.255.254/events"])
+def test_https_and_loopback_http_destinations(url):
+    HttpEventSender(url, "token")
 
 
 @pytest.mark.parametrize("token", ["", " token", "x\ny", "x\ry"])
@@ -49,9 +59,13 @@ def test_http_commit_acknowledgement(status):
         sender = HttpEventSender(f"http://127.0.0.1:{server.server_port}/events", "producer-token")
         if status in (200, 201, 204):
             sender(event_id, envelope)
-        else:
-            with pytest.raises(Exception):
+        elif status >= 500:
+            with pytest.raises(TransientDeliveryError):
                 sender(event_id, envelope)
+        else:
+            with pytest.raises(Exception) as caught:
+                sender(event_id, envelope)
+            assert not isinstance(caught.value, TransientDeliveryError)
         assert len(received) == 1
         headers, body = received[0]
         assert headers['Authorization'] == 'Bearer producer-token'
@@ -61,3 +75,103 @@ def test_http_commit_acknowledgement(status):
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+def _envelope():
+    tenant = uuid.uuid4()
+    return ControlPlaneEventEnvelope(event_type="payment.obligation.recorded.v1", service="payment-service",
+        tenant_id=tenant, payload={"tenant_id":str(tenant), "lease_id":str(uuid.uuid4()),
+        "billing_record_id":str(uuid.uuid4()), "source_event_id":str(uuid.uuid4()), "net_usdc_atoms":10})
+
+
+def test_refused_connection_is_a_transient_delivery_failure():
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    sender = HttpEventSender(f"http://127.0.0.1:{port}/events", "token", timeout=1)
+    with pytest.raises(TransientDeliveryError):
+        sender(uuid.uuid4(), _envelope())
+
+
+def test_trickled_response_headers_honor_the_delivery_deadline():
+    listener = socket.socket()
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    port = listener.getsockname()[1]
+    stop = Event()
+
+    def serve():
+        listener.settimeout(2)
+        try:
+            conn, _ = listener.accept()
+        except OSError:
+            return
+        with conn:
+            conn.settimeout(2)
+            data = b""
+            try:
+                while b"\r\n\r\n" not in data:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        return
+                    data += chunk
+                payload = b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                for byte in payload:
+                    if stop.is_set():
+                        return
+                    time.sleep(0.025)
+                    conn.sendall(bytes([byte]))
+            except OSError:
+                return
+    thread = Thread(target=serve, daemon=True)
+    thread.start()
+    sender = HttpEventSender(f"http://127.0.0.1:{port}/events", "producer-token", timeout=0.05)
+    started = time.monotonic()
+    try:
+        with pytest.raises(TransientDeliveryError):
+            sender(uuid.uuid4(), _envelope())
+        assert time.monotonic() - started < 1.0
+    finally:
+        stop.set()
+        listener.close()
+        thread.join(2)
+
+
+def test_transient_delivery_retries_with_backoff_and_keeps_other_tenants_moving():
+    clock = {"now": 0.0}
+    sleeps = []
+    calls = []
+
+    def monotonic():
+        return clock["now"]
+
+    def sleep(seconds):
+        sleeps.append(seconds)
+        clock["now"] += seconds
+
+    def relay(engine, tenant, sender):
+        calls.append((tenant, clock["now"]))
+        if tenant == "down" and sum(item[0] == "down" for item in calls) < 3:
+            raise TransientDeliveryError("receiver refused")
+
+    run_relay(object(), object(), ["down", "up"], once=False, sleep=sleep, monotonic=monotonic,
+              relay=relay, rounds=4)
+    assert [item for item in calls if item[0] == "down"] == [("down", 0.0), ("down", 1.0), ("down", 3.0)]
+    assert [item for item in calls if item[0] == "up"] == [("up", 0.0), ("up", 1.0), ("up", 2.0), ("up", 3.0)]
+    assert sleeps == [1, 1, 1]
+
+
+def test_one_shot_and_permanent_delivery_failures_propagate():
+    def refuse(engine, tenant, sender):
+        raise TransientDeliveryError("timed out")
+
+    with pytest.raises(TransientDeliveryError):
+        run_relay(object(), object(), ["only"], once=True, relay=refuse, rounds=3)
+
+    def permanent(engine, tenant, sender):
+        raise RuntimeError("receiver rejected the event")
+
+    with pytest.raises(RuntimeError):
+        run_relay(object(), object(), ["only", "other"], once=False, relay=permanent, rounds=3)

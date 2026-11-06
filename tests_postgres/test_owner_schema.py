@@ -166,6 +166,133 @@ async def test_http_consumer_retries_failure_and_receipts_success(owner):
         await consumer.stop()
 
 
+def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, monkeypatch):
+    import json
+    from datetime import datetime, timezone
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from pydantic import BaseModel
+    from sqlalchemy import event as sa_event
+    from controlplane_events.http_consumer import HttpRoutingConsumer, consumer_router
+    from controlplane_events.inbox import INBOX_DDL
+    from controlplane_events.payloads.lease_outcome import LeaseOutcome
+    engine, _, role = owner
+    migrate(engine, revision='inbox-auth', ddl=INBOX_DDL)
+    tokens = tmp_path / 'tokens.json'
+    tokens.write_text(json.dumps({'payment-service': 'pay-token', 'hypermesh-plane': 'plane-token'}))
+    monkeypatch.setenv('EVENT_PRODUCER_TOKENS_FILE', str(tokens))
+    calls = []
+
+    class Payload(BaseModel):
+        tenant_id: uuid.UUID
+        lease_id: uuid.UUID
+        billing_record_id: uuid.UUID
+        source_event_id: uuid.UUID
+        net_usdc_atoms: int
+
+    async def handle(envelope, payload):
+        calls.append(envelope.event_type)
+
+    consumer = HttpRoutingConsumer(os.environ['OWNED_OUTBOX_DATABASE_URL'], {
+        'payment.obligation.recorded.v1': (Payload, handle),
+        'hypermesh.lease.outcome.v1': (LeaseOutcome, handle),
+    })
+    @sa_event.listens_for(consumer.engine.sync_engine, 'connect')
+    def scope(connection, _):
+        with connection.cursor() as cursor:
+            cursor.execute(f'SET ROLE {role}')
+            cursor.execute(f'SET search_path TO {role}')
+        connection.commit()
+    app = FastAPI()
+    app.state.event_consumer = consumer
+    app.include_router(consumer_router())
+    tenant = uuid.uuid4()
+    payment_id = uuid.uuid4()
+    payment = {'event_id': str(payment_id), 'envelope': {
+        'event_type': 'payment.obligation.recorded.v1', 'service': 'payment-service',
+        'tenant_id': str(tenant), 'occurred_at': datetime.now(timezone.utc).isoformat(),
+        'payload': {'tenant_id': str(tenant), 'lease_id': str(uuid.uuid4()),
+                    'billing_record_id': str(uuid.uuid4()), 'source_event_id': str(uuid.uuid4()),
+                    'net_usdc_atoms': 10}}}
+    foreign_id = uuid.uuid4()
+    foreign = {'event_id': str(foreign_id), 'envelope': {
+        'event_type': 'hypermesh.lease.outcome.v1', 'service': 'payment-service',
+        'tenant_id': str(tenant), 'occurred_at': datetime.now(timezone.utc).isoformat(),
+        'payload': {'tenant_id': str(tenant), 'lease_id': str(uuid.uuid4()),
+                    'billing_record_id': str(uuid.uuid4()), 'host_org_id': str(uuid.uuid4()),
+                    'host_wallet': 'wallet', 'kind': 'p1_hardware', 'outcome': 'ended',
+                    'certification': 'passed', 'delivered_cents': 100,
+                    'observed_at': datetime.now(timezone.utc).isoformat()}}}
+    try:
+        with TestClient(app) as client:
+            owned = client.post('/internal/events', json=payment, headers={
+                'Authorization': 'Bearer pay-token', 'Idempotency-Key': str(payment_id)})
+            assert owned.status_code == 200, owned.text
+            rejected = client.post('/internal/events', json=foreign, headers={
+                'Authorization': 'Bearer pay-token', 'Idempotency-Key': str(foreign_id)})
+            assert rejected.status_code == 403, rejected.text
+            assert calls == ['payment.obligation.recorded.v1']
+    finally:
+        import asyncio
+        asyncio.run(consumer.stop())
+
+
+def test_cleanup_keeps_rows_committed_after_validation(owner):
+    import json
+    from sqlalchemy import bindparam, event as sa_event
+    from sqlalchemy.dialects.postgresql import JSONB
+    engine, admin, role = owner
+    migrate(engine, revision='1', ddl=DDL + 'ALTER TABLE records ADD COLUMN metadata jsonb;')
+    tenant, safe, live = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    with engine.begin() as db:
+        db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"), {'t': str(tenant)})
+        db.execute(text('INSERT INTO records(id,tenant_id,metadata) VALUES (:id,:t,:m)')
+                   .bindparams(bindparam('m', type_=JSONB)),
+                   {'id': safe, 't': tenant, 'm': {'livemode': False}})
+    planted = {'done': False}
+
+    def plant(conn, cursor, statement, parameters, context, executemany):
+        normalized = statement.lower()
+        if planted['done'] or 'delete' not in normalized or 'records' not in normalized:
+            return
+        planted['done'] = True
+        # Superuser session skips the tenant trigger so the insert does not wait
+        # on the cleanup transaction's service_tenants row lock.
+        other = admin.connect()
+        try:
+            other.exec_driver_sql("SET session_replication_role = 'replica'")
+            other.exec_driver_sql(f'SET ROLE "{role}"')
+            other.exec_driver_sql(f'SET search_path TO "{role}"')
+            other.commit()
+            with other.begin():
+                other.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"), {'t': str(tenant)})
+                other.execute(text('INSERT INTO records(id,tenant_id,metadata) VALUES (:id,:t,:m)')
+                              .bindparams(bindparam('m', type_=JSONB)),
+                              {'id': live, 't': tenant, 'm': {'livemode': True}})
+        finally:
+            other.exec_driver_sql('RESET ROLE')
+            other.exec_driver_sql('RESET session_replication_role')
+            other.exec_driver_sql('RESET search_path')
+            other.commit()
+            other.close()
+
+    sa_event.listen(engine, 'before_cursor_execute', plant)
+    try:
+        deleted = purge_test_tenant(engine, tenant)
+    finally:
+        sa_event.remove(engine, 'before_cursor_execute', plant)
+    assert planted['done']
+    assert deleted['records'] == 1
+    with engine.begin() as db:
+        db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"), {'t': str(tenant)})
+        remaining = db.execute(text('SELECT id, metadata FROM records')).mappings().all()
+    assert len(remaining) == 1 and remaining[0]['id'] == live
+    metadata = remaining[0]['metadata']
+    if isinstance(metadata, str):
+        metadata = json.loads(metadata)
+    assert metadata['livemode'] is True
+
+
 def test_test_cleanup_refuses_live_rows_atomically(owner):
     from sqlalchemy import bindparam
     from sqlalchemy.dialects.postgresql import JSONB
