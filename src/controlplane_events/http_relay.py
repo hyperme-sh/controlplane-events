@@ -170,9 +170,10 @@ def _temporary_transport_failure(exc):
     if isinstance(exc, HTTPError):
         return 500 <= exc.code <= 599
     reason = exc.reason if isinstance(exc, URLError) else exc
-    if isinstance(reason, (TimeoutError, ConnectionRefusedError)):
+    # A peer that accepts and then closes, or resets, has not committed the event.
+    if isinstance(reason, (TimeoutError, ConnectionRefusedError, ConnectionResetError)):
         return True
-    return getattr(reason, "errno", None) in {errno.ECONNREFUSED, errno.ETIMEDOUT}
+    return getattr(reason, "errno", None) in {errno.ECONNREFUSED, errno.ETIMEDOUT, errno.ECONNRESET}
 
 
 class HttpEventSender:

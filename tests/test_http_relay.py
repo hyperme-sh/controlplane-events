@@ -1,12 +1,14 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Event, Thread
+import errno
 import json
 import socket
 import time
 import uuid
 import pytest
 from controlplane_events.envelope import ControlPlaneEventEnvelope
-from controlplane_events.http_relay import HttpEventSender, TransientDeliveryError, _retry_delay, run_relay
+from controlplane_events.http_relay import (
+    HttpEventSender, TransientDeliveryError, _retry_delay, _temporary_transport_failure, run_relay)
 
 
 @pytest.mark.parametrize("url", ["file:///tmp/outbox", "https://user:pass@host/", "https://host/?token=x",
@@ -82,6 +84,51 @@ def _envelope():
     return ControlPlaneEventEnvelope(event_type="payment.obligation.recorded.v1", service="payment-service",
         tenant_id=tenant, payload={"tenant_id":str(tenant), "lease_id":str(uuid.uuid4()),
         "billing_record_id":str(uuid.uuid4()), "source_event_id":str(uuid.uuid4()), "net_usdc_atoms":10})
+
+
+def test_connection_closed_before_response_is_transient():
+    listener = socket.socket()
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    port = listener.getsockname()[1]
+
+    def serve():
+        listener.settimeout(2)
+        try:
+            conn, _ = listener.accept()
+        except OSError:
+            return
+        with conn:
+            conn.settimeout(2)
+            data = b""
+            try:
+                while b"\r\n\r\n" not in data:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        return
+                    data += chunk
+            except OSError:
+                return
+
+    thread = Thread(target=serve, daemon=True)
+    thread.start()
+    sender = HttpEventSender(f"http://127.0.0.1:{port}/events", "token", timeout=1)
+    try:
+        with pytest.raises(TransientDeliveryError):
+            sender(uuid.uuid4(), _envelope())
+    finally:
+        listener.close()
+        thread.join(2)
+
+
+def test_reset_without_a_response_is_classified_transient():
+    import http.client
+    from urllib.error import URLError
+    assert _temporary_transport_failure(http.client.RemoteDisconnected())
+    assert _temporary_transport_failure(ConnectionResetError(errno.ECONNRESET, "reset"))
+    assert _temporary_transport_failure(OSError(errno.ECONNRESET, "reset"))
+    assert _temporary_transport_failure(URLError(http.client.RemoteDisconnected()))
 
 
 def test_refused_connection_is_a_transient_delivery_failure():
