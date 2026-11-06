@@ -54,21 +54,25 @@ def main():
     from pathlib import Path
     import time
     import uuid
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
     from controlplane_events.outbox import relay_batch
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--database-url-file', type=Path, required=True)
     parser.add_argument('--token-file', type=Path, required=True)
     parser.add_argument('--destination', required=True)
-    parser.add_argument('--tenant', type=uuid.UUID, action='append', required=True)
+    parser.add_argument('--tenant', type=uuid.UUID, action='append')
     parser.add_argument('--once', action='store_true')
     args = parser.parse_args()
     sender = HttpEventSender(args.destination, args.token_file.read_text().strip())
     engine = create_engine(args.database_url_file.read_text().strip(), pool_pre_ping=True)
     try:
         while True:
-            for tenant in args.tenant:
+            tenants = args.tenant
+            if tenants is None:
+                with engine.connect() as db:
+                    tenants = db.scalars(text('SELECT tenant_id FROM service_tenants ORDER BY tenant_id')).all()
+            for tenant in tenants:
                 relay_batch(engine, tenant, sender)
             if args.once:
                 return
