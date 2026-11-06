@@ -129,6 +129,11 @@
       "schema": "budget.depleted.v1.json",
       "status": "existing"
     },
+    "gateway_api_access_v1": {
+      "owner": "controlplane-edge",
+      "schema": "gateway_api_access_v1.json",
+      "status": "existing"
+    },
     "group.member.added.v1": {
       "owner": "user-service",
       "schema": "group.member.added.v1.json",

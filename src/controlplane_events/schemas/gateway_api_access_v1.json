@@ -1,0 +1,30 @@
+{
+  "$id": "urn:controlplane:event:gateway_api_access_v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "method": {
+      "maxLength": 32,
+      "minLength": 1,
+      "type": "string"
+    },
+    "path": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    },
+    "trace_id": {
+      "format": "uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "method",
+    "path",
+    "trace_id"
+  ],
+  "type": "object",
+  "x-event-type": "gateway_api_access_v1",
+  "x-owner": "controlplane-edge",
+  "x-topic": "controlplane.events.v1"
+}
