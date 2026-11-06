@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy import bindparam, text
 from sqlalchemy.dialects.postgresql import JSONB
 from controlplane_events.contracts import validate_event_envelope
+from controlplane_events.http_consumer import producer_owns_event
 
 INBOX_DDL = '''
 CREATE TABLE event_inbox (
@@ -24,6 +25,8 @@ def receive(engine, event_id, envelope, *, producer):
     validate_event_envelope(envelope)
     if envelope.service != producer or envelope.tenant_id is None:
         raise ValueError('Envelope does not match producer and tenant authority')
+    if not producer_owns_event(producer, envelope.event_type):
+        raise ValueError('Producer cannot submit an event owned by another service')
     payload=envelope.model_dump(mode='json')
     with engine.begin() as db:
         db.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(envelope.tenant_id)})

@@ -6,7 +6,7 @@ import time
 import uuid
 import pytest
 from controlplane_events.envelope import ControlPlaneEventEnvelope
-from controlplane_events.http_relay import HttpEventSender, TransientDeliveryError, run_relay
+from controlplane_events.http_relay import HttpEventSender, TransientDeliveryError, _retry_delay, run_relay
 
 
 @pytest.mark.parametrize("url", ["file:///tmp/outbox", "https://user:pass@host/", "https://host/?token=x",
@@ -161,6 +161,15 @@ def test_transient_delivery_retries_with_backoff_and_keeps_other_tenants_moving(
     assert [item for item in calls if item[0] == "down"] == [("down", 0.0), ("down", 1.0), ("down", 3.0)]
     assert [item for item in calls if item[0] == "up"] == [("up", 0.0), ("up", 1.0), ("up", 2.0), ("up", 3.0)]
     assert sleeps == [1, 1, 1]
+
+
+def test_retry_delay_stays_capped_across_a_long_outage():
+    assert _retry_delay(1) == 1
+    assert _retry_delay(2) == 2
+    assert _retry_delay(6) == 32
+    assert _retry_delay(7) == 60
+    assert _retry_delay(1025) == 60
+    assert _retry_delay(10**6) == 60
 
 
 def test_one_shot_and_permanent_delivery_failures_propagate():

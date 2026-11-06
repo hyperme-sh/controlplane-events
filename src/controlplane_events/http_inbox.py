@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import create_engine, text
 from controlplane_events.envelope import ControlPlaneEventEnvelope
+from controlplane_events.http_consumer import producer_owns_event
 from controlplane_events.inbox import receive
 
 
@@ -46,6 +47,8 @@ def create_app(*, engine=None, producers=None):
         supplied=request.headers.get('authorization','')
         if not expected or not hmac.compare_digest(supplied.encode(),('Bearer '+expected).encode()):
             raise HTTPException(401,'Producer credential required')
+        if not producer_owns_event(delivery.envelope.service, delivery.envelope.event_type):
+            raise HTTPException(403,'Producer cannot submit an event owned by another service')
         if request.headers.get('idempotency-key') != str(delivery.event_id):
             raise HTTPException(400,'Idempotency key must match event identity')
         try:

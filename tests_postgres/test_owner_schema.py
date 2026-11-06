@@ -119,6 +119,18 @@ def test_http_inbox_auth_replay_and_conflict(owner):
         assert client.post('/events',json=body,headers=headers).json()['duplicate'] is True
         body['envelope']['payload']['net_usdc_atoms']+=1
         assert client.post('/events',json=body,headers=headers).status_code==409
+        foreign_id=uuid.uuid4()
+        observed=datetime.now(timezone.utc).isoformat()
+        foreign={'event_id':str(foreign_id),'envelope':{
+            'event_type':'hypermesh.lease.outcome.v1','service':'payment-service',
+            'tenant_id':str(tenant),'occurred_at':observed,'payload':{
+                'tenant_id':str(tenant),'lease_id':str(uuid.uuid4()),
+                'billing_record_id':str(uuid.uuid4()),'host_org_id':str(uuid.uuid4()),
+                'host_wallet':'wallet','kind':'p1_hardware','outcome':'ended',
+                'certification':'passed','delivered_cents':100,'observed_at':observed}}}
+        rejected=client.post('/events',json=foreign,headers={
+            'Authorization':'Bearer test-producer','Idempotency-Key':str(foreign_id)})
+        assert rejected.status_code==403,rejected.text
     with engine.begin() as db:
         db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(tenant)})
         assert db.scalar(text('SELECT count(*) FROM event_inbox'))==1

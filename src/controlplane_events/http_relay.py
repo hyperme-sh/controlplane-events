@@ -214,6 +214,16 @@ class HttpEventSender:
             raise
 
 
+def _retry_delay(attempt):
+    """Bounded exponential backoff. Cap the shift before converting to float.
+
+    ``float(2 ** 1024)`` raises OverflowError, which would escape the recovery
+    loop on a long outage. Exponents at or above 6 are already the 60 second cap.
+    """
+    exponent = min(max(int(attempt), 1) - 1, 6)
+    return min(60.0, float(2 ** exponent))
+
+
 def run_relay(engine, sender, tenants, *, once, sleep=time.sleep, monotonic=time.monotonic,
               relay=None, rounds=None):
     """Deliver each tenant. Temporary receiver failures roll back and back off.
@@ -245,7 +255,7 @@ def run_relay(engine, sender, tenants, *, once, sleep=time.sleep, monotonic=time
                     raise
                 attempt = failures.get(tenant, 0) + 1
                 failures[tenant] = attempt
-                delay = min(60.0, float(2 ** (attempt - 1)))
+                delay = _retry_delay(attempt)
                 ready_at[tenant] = monotonic() + delay
                 logger.warning("temporary event delivery failure for %s; retrying in %.0fs (%s)",
                                tenant, delay, exc)
