@@ -1,6 +1,7 @@
 {
   "consumer_groups": {
     "hypermesh.payment.succeeded": "hypermesh-service-controlplane-events",
+    "payment.hypermesh.lease.outcome": "payment-service-lease-outcomes",
     "payment.hypermesh.payout.due": "payment-service-controlplane-events"
   },
   "events": {
@@ -177,6 +178,11 @@
     "hypermesh.lease.failed.v1": {
       "owner": "hypermesh",
       "schema": "hypermesh.lease.failed.v1.json",
+      "status": "existing"
+    },
+    "hypermesh.lease.outcome.v1": {
+      "owner": "hypermesh-plane",
+      "schema": "hypermesh.lease.outcome.v1.json",
       "status": "existing"
     },
     "hypermesh.lease.started.v1": {
