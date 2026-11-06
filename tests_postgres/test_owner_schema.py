@@ -96,6 +96,35 @@ def test_instance_binding_mismatch_refuses_cleanup(owner):
             db.execute(text('UPDATE test_authority.database_identity SET cluster_identifier=:v'),{'v':original})
 
 
+@pytest.mark.asyncio
+async def test_unknown_bearer_is_rejected_before_the_body_is_read():
+    from fastapi import HTTPException
+    from controlplane_events.http_inbox import MAX_DELIVERY_BYTES, authenticated_delivery, read_limited_body
+
+    class Closed:
+        headers = {'authorization': 'Bearer wrong', 'content-length': str(MAX_DELIVERY_BYTES + 1)}
+        async def stream(self):
+            raise AssertionError('body read before authentication')
+            yield b''
+
+    with pytest.raises(HTTPException) as denied:
+        await authenticated_delivery(Closed(), {'payment-service': 'test-producer'})
+    assert denied.value.status_code == 401
+
+    class Chunked:
+        headers = {'authorization': 'Bearer test-producer'}
+        async def stream(self):
+            yield b'{' * 16
+            yield b'x' * MAX_DELIVERY_BYTES
+
+    with pytest.raises(HTTPException) as oversized:
+        await read_limited_body(Chunked())
+    assert oversized.value.status_code == 413
+    with pytest.raises(HTTPException) as rejected:
+        await authenticated_delivery(Chunked(), {'payment-service': 'test-producer'})
+    assert rejected.value.status_code == 413
+
+
 def test_http_inbox_auth_replay_and_conflict(owner):
     from datetime import datetime,timezone
     from fastapi.testclient import TestClient
@@ -131,6 +160,11 @@ def test_http_inbox_auth_replay_and_conflict(owner):
         rejected=client.post('/events',json=foreign,headers={
             'Authorization':'Bearer test-producer','Idempotency-Key':str(foreign_id)})
         assert rejected.status_code==403,rejected.text
+        from controlplane_events.http_inbox import MAX_DELIVERY_BYTES
+        unauthenticated=client.post('/events', content=b'{}', headers={'content-length': str(MAX_DELIVERY_BYTES + 1)})
+        assert unauthenticated.status_code==401
+        too_large=client.post('/events', content=b'x' * (MAX_DELIVERY_BYTES + 1), headers={'Authorization': 'Bearer test-producer'})
+        assert too_large.status_code==413, too_large.text
     with engine.begin() as db:
         db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(tenant)})
         assert db.scalar(text('SELECT count(*) FROM event_inbox'))==1
@@ -289,6 +323,14 @@ def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, 
             rejected = client.post('/internal/events', json=foreign, headers={
                 'Authorization': 'Bearer pay-token', 'Idempotency-Key': str(foreign_id)})
             assert rejected.status_code == 403, rejected.text
+            assert calls == [('payment.obligation.recorded.v1', payment_id)]
+            from controlplane_events.http_inbox import MAX_DELIVERY_BYTES
+            unauthenticated = client.post('/internal/events', content=b'{}', headers={
+                'content-length': str(MAX_DELIVERY_BYTES + 1)})
+            assert unauthenticated.status_code == 401
+            too_large = client.post('/internal/events', content=b'x' * (MAX_DELIVERY_BYTES + 1), headers={
+                'Authorization': 'Bearer pay-token'})
+            assert too_large.status_code == 413, too_large.text
             assert calls == [('payment.obligation.recorded.v1', payment_id)]
     finally:
         import asyncio

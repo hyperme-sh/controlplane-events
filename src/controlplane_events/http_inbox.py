@@ -7,7 +7,7 @@ from pathlib import Path
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationError
 from sqlalchemy import create_engine, text
 from controlplane_events.envelope import ControlPlaneEventEnvelope
 from controlplane_events.http_consumer import producer_owns_event
@@ -18,6 +18,49 @@ class Delivery(BaseModel):
     model_config = ConfigDict(extra='forbid')
     event_id: uuid.UUID
     envelope: ControlPlaneEventEnvelope
+
+
+# One delivery is a small JSON document. The cap applies to the decoded body,
+# including chunked requests that omit Content-Length.
+MAX_DELIVERY_BYTES = 256 * 1024
+
+
+def bearer_is_known(authorization: str, tokens) -> bool:
+    supplied = (authorization or '').encode()
+    known = False
+    for token in tokens:
+        expected = ('Bearer ' + token).encode()
+        if len(supplied) == len(expected) and hmac.compare_digest(supplied, expected):
+            known = True
+    return known
+
+
+async def read_limited_body(request: Request, limit: int = MAX_DELIVERY_BYTES) -> bytes:
+    declared = request.headers.get('content-length')
+    if declared is not None:
+        try:
+            size = int(declared)
+        except ValueError:
+            raise HTTPException(400, 'Content-Length must be an integer') from None
+        if size > limit:
+            raise HTTPException(413, 'Delivery body exceeds the size limit')
+    body = bytearray()
+    async for chunk in request.stream():
+        if len(body) + len(chunk) > limit:
+            raise HTTPException(413, 'Delivery body exceeds the size limit')
+        body.extend(chunk)
+    return bytes(body)
+
+
+async def authenticated_delivery(request: Request, tokens: dict) -> Delivery:
+    """Reject unknown bearers and oversized bodies before JSON parsing."""
+    if not tokens or not bearer_is_known(request.headers.get('authorization', ''), tokens.values()):
+        raise HTTPException(401, 'Producer credential required')
+    raw = await read_limited_body(request)
+    try:
+        return Delivery.model_validate_json(raw)
+    except ValidationError:
+        raise HTTPException(400, 'Delivery body is not a valid event') from None
 
 
 def create_app(*, engine=None, producers=None):
@@ -42,7 +85,8 @@ def create_app(*, engine=None, producers=None):
         return {'ready':True}
 
     @app.post('/events')
-    def ingest(request:Request,delivery:Delivery):
+    async def ingest(request:Request):
+        delivery = await authenticated_delivery(request, request.app.state.producers)
         expected=request.app.state.producers.get(delivery.envelope.service)
         supplied=request.headers.get('authorization','')
         if not expected or not hmac.compare_digest(supplied.encode(),('Bearer '+expected).encode()):

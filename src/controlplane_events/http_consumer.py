@@ -66,14 +66,16 @@ def consumer_router():
     import os
     from pathlib import Path
     from fastapi import APIRouter,HTTPException,Request
-    from controlplane_events.http_inbox import Delivery
+    from controlplane_events.http_inbox import authenticated_delivery
     router=APIRouter()
 
     @router.post('/internal/events')
-    async def receive_event(request:Request,delivery:Delivery):
+    async def receive_event(request:Request):
         path=os.environ.get('EVENT_PRODUCER_TOKENS_FILE')
         if not path:raise HTTPException(503,'Event credentials not configured')
-        expected=json.loads(Path(path).read_text()).get(delivery.envelope.service)
+        tokens=json.loads(Path(path).read_text())
+        delivery=await authenticated_delivery(request, tokens)
+        expected=tokens.get(delivery.envelope.service)
         if not expected or not hmac.compare_digest(request.headers.get('authorization','').encode(),('Bearer '+expected).encode()):
             raise HTTPException(401,'Producer credential required')
         if not producer_owns_event(delivery.envelope.service, delivery.envelope.event_type):
