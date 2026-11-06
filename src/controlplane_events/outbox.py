@@ -11,6 +11,7 @@ from typing import Callable
 from sqlalchemy import bindparam, text
 from sqlalchemy.dialects.postgresql import JSONB
 from controlplane_events.contracts import validate_event_envelope
+from controlplane_events.delivery import MAX_DELIVERY_BYTES, delivery_body
 from controlplane_events.envelope import ControlPlaneEventEnvelope
 
 OUTBOX_DDL = """
@@ -41,6 +42,8 @@ def enqueue(session, envelope: ControlPlaneEventEnvelope, *, event_id: uuid.UUID
     validate_event_envelope(envelope)
     if envelope.tenant_id is None:
         raise ValueError("service outbox requires tenant scope")
+    if len(delivery_body(event_id, envelope)) > MAX_DELIVERY_BYTES:
+        raise ValueError("event delivery exceeds the receiver body limit")
     session.execute(_INSERT, {"id": event_id, "tenant": envelope.tenant_id,
                               "envelope": envelope.model_dump(mode="json")})
 

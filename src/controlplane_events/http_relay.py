@@ -14,7 +14,6 @@ import errno
 import http.client
 import io
 import ipaddress
-import json
 import logging
 import math
 import socket
@@ -196,9 +195,9 @@ class HttpEventSender:
 
     def __call__(self, event_id, envelope):
         from controlplane_events.contracts import validate_event_envelope
+        from controlplane_events.delivery import delivery_body
         validate_event_envelope(envelope)
-        body = json.dumps({"event_id": str(event_id), "envelope": envelope.model_dump(mode="json")},
-                          separators=(",", ":")).encode()
+        body = delivery_body(event_id, envelope)
         request = Request(self.url, data=body, method="POST", headers={
             "Content-Type": "application/json", "Authorization": "Bearer " + self.token,
             "Idempotency-Key": str(event_id),

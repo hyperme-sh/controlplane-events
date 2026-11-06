@@ -45,7 +45,11 @@ class HttpRoutingConsumer:
         payload=model.model_validate(envelope.payload)
         serialized=envelope.model_dump(mode='json')
         async with self.engine.begin() as db:
+            await db.execute(text('INSERT INTO service_tenants(tenant_id) VALUES (:tenant) ON CONFLICT DO NOTHING'),
+                             {'tenant':envelope.tenant_id})
+        async with self.engine.begin() as db:
             await db.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(envelope.tenant_id)})
+            await db.execute(text("SELECT set_config('app.skip_tenant_remember','1',true)"))
             await db.execute(text('SELECT pg_advisory_xact_lock(:key)'),
                              {'key':int.from_bytes(hashlib.sha256(event_id.bytes).digest()[:8],signed=True)})
             inserted=await db.scalar(text('''INSERT INTO event_inbox(event_id,tenant_id,envelope)

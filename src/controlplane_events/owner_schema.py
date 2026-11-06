@@ -15,6 +15,23 @@ $$;
 CREATE TABLE owner_schema_version (revision text PRIMARY KEY, sha256 text NOT NULL);
 """
 
+# Installed on every migrate, including replay, without changing the recorded
+# DDL digest. A receipt transaction sets the guard so its inbox insert does not
+# hold an uncommitted service_tenants key while a handler writes elsewhere.
+_REMEMBER_TENANT = """
+CREATE OR REPLACE FUNCTION remember_service_tenant() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF current_setting('app.skip_tenant_remember', true) = '1' THEN
+        RETURN NEW;
+    END IF;
+    IF NEW.tenant_id IS NOT NULL THEN
+        INSERT INTO service_tenants VALUES (NEW.tenant_id) ON CONFLICT DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+"""
+
 
 def migrate(engine, *, revision, ddl):
     digest = hashlib.sha256((COMMON_DDL + ddl).encode()).hexdigest()
@@ -30,8 +47,10 @@ def migrate(engine, *, revision, ddl):
             versions = db.execute(text('SELECT revision,sha256 FROM owner_schema_version')).all()
             if versions != [(revision,digest)]:
                 raise ValueError('Owner migration identity differs')
+            db.exec_driver_sql(_REMEMBER_TENANT)
             return
         db.exec_driver_sql(COMMON_DDL)
+        db.exec_driver_sql(_REMEMBER_TENANT)
         db.exec_driver_sql(ddl)
         tables = db.execute(text("""SELECT table_name FROM information_schema.columns
             WHERE table_schema=current_schema() AND column_name='tenant_id'

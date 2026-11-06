@@ -273,6 +273,52 @@ async def test_reused_event_identity_is_rejected_before_the_handler(owner):
         assert db.scalar(text('SELECT count(*) FROM event_inbox'))==0
 
 
+@pytest.mark.asyncio
+async def test_handler_domain_write_does_not_wait_on_the_receipt(owner):
+    import asyncio
+    from pydantic import BaseModel
+    from controlplane_events.envelope import ControlPlaneEventEnvelope
+    from controlplane_events.http_consumer import HttpRoutingConsumer
+    from controlplane_events.inbox import INBOX_DDL
+    engine,_,role=owner
+    migrate(engine,revision='inbox-lock',ddl=INBOX_DDL+DDL)
+    class Payload(BaseModel):
+        tenant_id:uuid.UUID
+        lease_id:uuid.UUID
+        billing_record_id:uuid.UUID
+        source_event_id:uuid.UUID
+        net_usdc_atoms:int
+    async def handle(envelope,payload,delivery_id):
+        def write():
+            with engine.begin() as db:
+                db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(envelope.tenant_id)})
+                db.execute(text("INSERT INTO records(id,tenant_id,value) VALUES (:id,:t,'domain')"),
+                           {'id':uuid.uuid4(),'t':envelope.tenant_id})
+        await asyncio.to_thread(write)
+    consumer=HttpRoutingConsumer(os.environ['OWNED_OUTBOX_DATABASE_URL'],
+        {'payment.obligation.recorded.v1':(Payload,handle)})
+    @event.listens_for(consumer.engine.sync_engine,'connect')
+    def scope(connection,_):
+        with connection.cursor() as cursor:
+            cursor.execute(f'SET ROLE {role}')
+            cursor.execute(f'SET search_path TO {role}')
+        connection.commit()
+    tenant=uuid.uuid4()
+    payload=Payload(tenant_id=tenant,lease_id=uuid.uuid4(),billing_record_id=uuid.uuid4(),
+                    source_event_id=uuid.uuid4(),net_usdc_atoms=10)
+    envelope=ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1',service='payment-service',
+                                       tenant_id=tenant,payload=payload.model_dump(mode='json'))
+    try:
+        await consumer.start()
+        assert await asyncio.wait_for(consumer.receive(uuid.uuid4(),envelope),timeout=5)
+    finally:
+        await consumer.stop()
+    with engine.begin() as db:
+        db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(tenant)})
+        assert db.scalar(text('SELECT count(*) FROM event_inbox'))==1
+        assert db.scalar(text('SELECT count(*) FROM records'))==1
+
+
 def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, monkeypatch):
     import json
     from datetime import datetime, timezone

@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, ValidationError
 from sqlalchemy import create_engine, text
 from controlplane_events.envelope import ControlPlaneEventEnvelope
+from controlplane_events.delivery import MAX_DELIVERY_BYTES
 from controlplane_events.http_consumer import producer_owns_event
 from controlplane_events.inbox import receive
 from controlplane_events.store import normalize_sync_url
@@ -20,11 +21,6 @@ class Delivery(BaseModel):
     model_config = ConfigDict(extra='forbid')
     event_id: uuid.UUID
     envelope: ControlPlaneEventEnvelope
-
-
-# One delivery is a small JSON document. The cap applies to the decoded body,
-# including chunked requests that omit Content-Length.
-MAX_DELIVERY_BYTES = 256 * 1024
 
 
 def bearer_is_known(authorization: str, tokens) -> bool:
