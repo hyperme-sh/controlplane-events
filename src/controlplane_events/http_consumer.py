@@ -1,7 +1,10 @@
 """Owner HTTP delivery with durable receipts and at-least-once handlers.
 
-Handlers must be idempotent: a process crash after their domain commit but before
-this receipt commits causes redelivery. No consumer reads another owner's SQL.
+Handlers are called as handler(envelope, payload, event_id). They must be
+idempotent: a crash after their domain commit but before this receipt commits
+redelivers the same event_id. The receipt identity is reserved before the
+handler runs, so a reused id is rejected before domain effects. No consumer
+reads another owner's SQL.
 """
 import hashlib
 import uuid
@@ -45,14 +48,15 @@ class HttpRoutingConsumer:
             await db.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(envelope.tenant_id)})
             await db.execute(text('SELECT pg_advisory_xact_lock(:key)'),
                              {'key':int.from_bytes(hashlib.sha256(event_id.bytes).digest()[:8],signed=True)})
-            previous=await db.scalar(text('SELECT envelope FROM event_inbox WHERE event_id=:id'),{'id':event_id})
-            if previous is not None:
-                if previous!=serialized:raise ValueError('Event identity reused with different facts')
-                return False
-            await handler(envelope,payload)
-            await db.execute(text('INSERT INTO event_inbox(event_id,tenant_id,envelope) VALUES (:id,:tenant,:envelope)')
+            inserted=await db.scalar(text('''INSERT INTO event_inbox(event_id,tenant_id,envelope)
+                VALUES (:id,:tenant,:envelope) ON CONFLICT DO NOTHING RETURNING event_id''')
                 .bindparams(bindparam('envelope',type_=JSONB)),
                 {'id':event_id,'tenant':envelope.tenant_id,'envelope':serialized})
+            if inserted is None:
+                previous=await db.scalar(text('SELECT envelope FROM event_inbox WHERE event_id=:id'),{'id':event_id})
+                if previous!=serialized:raise ValueError('Event identity reused with different facts')
+                return False
+            await handler(envelope,payload,event_id)
         return True
 
 

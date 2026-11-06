@@ -152,8 +152,8 @@ async def test_http_consumer_retries_failure_and_receipts_success(owner):
         source_event_id:uuid.UUID
         net_usdc_atoms:int
     calls=[]
-    async def handle(envelope,payload):
-        calls.append(payload.lease_id)
+    async def handle(envelope,payload,delivery_id):
+        calls.append((payload.lease_id,delivery_id))
         if len(calls)==1:raise RuntimeError('transient handler failure')
     consumer=HttpRoutingConsumer(os.environ['OWNED_OUTBOX_DATABASE_URL'],
         {'payment.obligation.recorded.v1':(Payload,handle)})
@@ -173,9 +173,55 @@ async def test_http_consumer_retries_failure_and_receipts_success(owner):
             await consumer.receive(event_id,envelope)
         assert await consumer.receive(event_id,envelope)
         assert not await consumer.receive(event_id,envelope)
-        assert calls==[payload.lease_id,payload.lease_id]
+        assert calls==[(payload.lease_id,event_id),(payload.lease_id,event_id)]
     finally:
         await consumer.stop()
+
+
+@pytest.mark.asyncio
+async def test_reused_event_identity_is_rejected_before_the_handler(owner):
+    from pydantic import BaseModel
+    from controlplane_events.envelope import ControlPlaneEventEnvelope
+    from controlplane_events.http_consumer import HttpRoutingConsumer
+    from controlplane_events.inbox import INBOX_DDL
+    engine,_,role=owner
+    migrate(engine,revision='inbox-identity',ddl=INBOX_DDL)
+    class Payload(BaseModel):
+        tenant_id:uuid.UUID
+        lease_id:uuid.UUID
+        billing_record_id:uuid.UUID
+        source_event_id:uuid.UUID
+        net_usdc_atoms:int
+    calls=[]
+    async def handle(envelope,payload,delivery_id):
+        calls.append(delivery_id)
+    consumer=HttpRoutingConsumer(os.environ['OWNED_OUTBOX_DATABASE_URL'],
+        {'payment.obligation.recorded.v1':(Payload,handle)})
+    @event.listens_for(consumer.engine.sync_engine,'connect')
+    def scope(connection,_):
+        with connection.cursor() as cursor:
+            cursor.execute(f'SET ROLE {role}')
+            cursor.execute(f'SET search_path TO {role}')
+        connection.commit()
+    first,second,event_id=uuid.uuid4(),uuid.uuid4(),uuid.uuid4()
+    def envelope(tenant):
+        payload=Payload(tenant_id=tenant,lease_id=uuid.uuid4(),billing_record_id=uuid.uuid4(),
+                        source_event_id=uuid.uuid4(),net_usdc_atoms=10)
+        return ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1',service='payment-service',
+                                         tenant_id=tenant,payload=payload.model_dump(mode='json'))
+    try:
+        await consumer.start()
+        assert await consumer.receive(event_id,envelope(first))
+        with pytest.raises(ValueError,match='reused'):
+            await consumer.receive(event_id,envelope(second))
+        assert calls==[event_id]
+    finally:
+        await consumer.stop()
+    with engine.begin() as db:
+        db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(first)})
+        assert db.scalar(text('SELECT count(*) FROM event_inbox'))==1
+        db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"),{'t':str(second)})
+        assert db.scalar(text('SELECT count(*) FROM event_inbox'))==0
 
 
 def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, monkeypatch):
@@ -202,8 +248,8 @@ def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, 
         source_event_id: uuid.UUID
         net_usdc_atoms: int
 
-    async def handle(envelope, payload):
-        calls.append(envelope.event_type)
+    async def handle(envelope, payload, delivery_id):
+        calls.append((envelope.event_type, delivery_id))
 
     consumer = HttpRoutingConsumer(os.environ['OWNED_OUTBOX_DATABASE_URL'], {
         'payment.obligation.recorded.v1': (Payload, handle),
@@ -243,7 +289,7 @@ def test_http_consumer_rejects_event_owned_by_another_producer(owner, tmp_path, 
             rejected = client.post('/internal/events', json=foreign, headers={
                 'Authorization': 'Bearer pay-token', 'Idempotency-Key': str(foreign_id)})
             assert rejected.status_code == 403, rejected.text
-            assert calls == ['payment.obligation.recorded.v1']
+            assert calls == [('payment.obligation.recorded.v1', payment_id)]
     finally:
         import asyncio
         asyncio.run(consumer.stop())
