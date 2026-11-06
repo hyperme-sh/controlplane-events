@@ -30,7 +30,7 @@
       "owner": "auth-service",
       "status": "existing"
     },
-    "billing.record.created.v1": {
+    "billing.record.created.v2": {
       "inline": {
         "additionalProperties": false,
         "properties": {
@@ -94,6 +94,24 @@
               "null"
             ]
           },
+          "processor_customer_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "processor_session_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "processor_subscription_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "product_id": {
             "type": [
               "string",
@@ -107,24 +125,6 @@
             ]
           },
           "status": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "stripe_customer_id": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "stripe_session_id": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "stripe_subscription_id": {
             "type": [
               "string",
               "null"
@@ -192,14 +192,14 @@
       "owner": "marketplace-service",
       "status": "existing"
     },
-    "payment.succeeded.v1": {
+    "payment.succeeded.v3": {
       "model": "PaymentSucceededPayload",
       "module": "controlplane_events.payloads.payment_events",
       "owner": "payment-service",
       "status": "existing"
     },
-    "payment.succeeded.v2": {
-      "model": "PaymentSucceededV2Payload",
+    "payment.succeeded.v4": {
+      "model": "PaymentSucceededV4Payload",
       "module": "controlplane_events.payloads.payment_events",
       "owner": "payment-service",
       "status": "reserved"

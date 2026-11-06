@@ -205,3 +205,17 @@ This checkout's package version is `0.1.0` (`pyproject.toml`, release line `0.1`
 Copyright 2026 controlplane-events contributors.
 
 This project's code and schemas are licensed under [Apache-2.0](LICENSE). Separately installed dependencies retain their own licenses. The wheel and source distribution include the license text and SPDX package metadata.
+
+## Service-owned outbox
+
+`outbox.enqueue` uses the caller's transaction. Apply `OUTBOX_DDL` from each
+service's own migration chain and connect using that owner's role/search path.
+`relay_batch` claims tenant-scoped rows using `FOR UPDATE SKIP LOCKED` and
+acknowledges only after the supplied bounded HTTP sender succeeds. Failed sends
+roll back acknowledgements; receivers must deduplicate event IDs transactionally.
+No foreign database connection or external broker is needed.
+
+`hypermesh.lease.outcome.v1` carries execution and certification facts plus delivered
+integer cents. It carries no host entitlement or fee decision. Payment owns those
+decisions. The native `tests_postgres` suite proves rollback, retry identity,
+concurrent claims, tenant isolation and foreign-schema read/write refusal.

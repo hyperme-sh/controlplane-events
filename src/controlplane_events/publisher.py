@@ -128,3 +128,33 @@ class PostgresEventPublisher:
         )
         async with self._engine.begin() as conn:
             await insert_event(conn, envelope)
+
+
+class OwnedOutboxPublisher(PostgresEventPublisher):
+    """Persist in this service's schema; an HTTP relay owns delivery."""
+
+    def publish_in_session(self, session, *, tenant_id, event_type, payload, correlation_id=None):
+        from controlplane_events.outbox import enqueue
+        envelope=self._envelope(tenant_id=tenant_id,event_type=event_type,
+                                payload=payload,correlation_id=correlation_id)
+        event_id=uuid.uuid4()
+        enqueue(session,envelope,event_id=event_id)
+        return event_id
+
+    async def publish(self, *, tenant_id, event_type, payload, correlation_id=None):
+        from sqlalchemy import text
+        from controlplane_events.outbox import enqueue
+        bound=_outbox_session.get()
+        if bound is not None:
+            self.publish_in_session(bound,tenant_id=tenant_id,event_type=event_type,
+                                    payload=payload,correlation_id=correlation_id)
+            return
+        if self._engine is None:
+            await self.start()
+        envelope=self._envelope(tenant_id=tenant_id,event_type=event_type,
+                                payload=payload,correlation_id=correlation_id)
+        if tenant_id is None:
+            raise ValueError('Owned domain events require tenant identity')
+        async with self._engine.begin() as connection:
+            await connection.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(tenant_id)})
+            await connection.run_sync(lambda db: enqueue(db,envelope,event_id=uuid.uuid4()))

@@ -1,0 +1,85 @@
+{
+  "$id": "urn:controlplane:event:hypermesh.lease.outcome.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "billing_record_id": {
+      "format": "uuid",
+      "title": "Billing Record Id",
+      "type": "string"
+    },
+    "certification": {
+      "enum": [
+        "passed",
+        "failed",
+        "unavailable"
+      ],
+      "title": "Certification",
+      "type": "string"
+    },
+    "delivered_cents": {
+      "minimum": 0,
+      "title": "Delivered Cents",
+      "type": "integer"
+    },
+    "host_org_id": {
+      "format": "uuid",
+      "title": "Host Org Id",
+      "type": "string"
+    },
+    "host_wallet": {
+      "minLength": 1,
+      "title": "Host Wallet",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "p1_hardware",
+        "p2_loaded_model"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "lease_id": {
+      "format": "uuid",
+      "title": "Lease Id",
+      "type": "string"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "started",
+        "ended",
+        "failed"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "lease_id",
+    "billing_record_id",
+    "host_org_id",
+    "host_wallet",
+    "kind",
+    "outcome",
+    "certification",
+    "delivered_cents",
+    "observed_at"
+  ],
+  "title": "LeaseOutcome",
+  "type": "object",
+  "x-event-type": "hypermesh.lease.outcome.v1",
+  "x-owner": "hypermesh-plane",
+  "x-topic": "controlplane.events.v1"
+}

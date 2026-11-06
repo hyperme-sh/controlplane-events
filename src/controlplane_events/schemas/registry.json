@@ -1,7 +1,7 @@
 {
   "consumer_groups": {
     "hypermesh.payment.succeeded": "hypermesh-service-controlplane-events",
-    "payment.hypermesh.payout.due": "payment-service-controlplane-events"
+    "payment.hypermesh.lease.outcome": "payment-service-lease-outcomes"
   },
   "events": {
     "acl.policy.updated.v1": {
@@ -114,9 +114,9 @@
       "schema": "auth.token.issued.v1.json",
       "status": "existing"
     },
-    "billing.record.created.v1": {
+    "billing.record.created.v2": {
       "owner": "platform",
-      "schema": "billing.record.created.v1.json",
+      "schema": "billing.record.created.v2.json",
       "status": "existing"
     },
     "budget.allocated.v1": {
@@ -179,14 +179,14 @@
       "schema": "hypermesh.lease.failed.v1.json",
       "status": "existing"
     },
+    "hypermesh.lease.outcome.v1": {
+      "owner": "hypermesh-plane",
+      "schema": "hypermesh.lease.outcome.v1.json",
+      "status": "existing"
+    },
     "hypermesh.lease.started.v1": {
       "owner": "hypermesh",
       "schema": "hypermesh.lease.started.v1.json",
-      "status": "existing"
-    },
-    "hypermesh.payout.due.v1": {
-      "owner": "hypermesh",
-      "schema": "hypermesh.payout.due.v1.json",
       "status": "existing"
     },
     "listing.created.v1": {
@@ -199,14 +199,19 @@
       "schema": "payment.connect.access.changed.v1.json",
       "status": "existing"
     },
-    "payment.succeeded.v1": {
+    "payment.obligation.recorded.v1": {
       "owner": "payment-service",
-      "schema": "payment.succeeded.v1.json",
+      "schema": "payment.obligation.recorded.v1.json",
       "status": "existing"
     },
-    "payment.succeeded.v2": {
+    "payment.succeeded.v3": {
       "owner": "payment-service",
-      "schema": "payment.succeeded.v2.json",
+      "schema": "payment.succeeded.v3.json",
+      "status": "existing"
+    },
+    "payment.succeeded.v4": {
+      "owner": "payment-service",
+      "schema": "payment.succeeded.v4.json",
       "status": "reserved"
     },
     "purchase.completed.v1": {

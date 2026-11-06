@@ -52,6 +52,21 @@ def envelope_to_bytes(envelope: Any) -> bytes:
     raise TypeError(f"unexpected envelope type {type(envelope)!r}")
 
 
+def normalize_sync_url(url: str) -> str:
+    """Select the installed psycopg 3 driver for a plain Postgres URL.
+
+    SQLAlchemy's default for ``postgresql://`` is psycopg2, which the http
+    extra does not install.
+    """
+    text = url.strip()
+    if text.startswith("postgresql+psycopg://"):
+        return text
+    for prefix in ("postgresql+asyncpg://", "postgresql+psycopg2://", "postgresql://", "postgres://"):
+        if text.startswith(prefix):
+            return "postgresql+psycopg://" + text.removeprefix(prefix)
+    return text
+
+
 def normalize_async_url(url: str) -> str:
     if url.startswith("postgresql://"):
         return "postgresql+asyncpg://" + url.removeprefix("postgresql://")

@@ -16,15 +16,22 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
 ]
 
+[project.optional-dependencies]
+http = ["fastapi>=0.115", "uvicorn>=0.34", "psycopg[binary]>=3.2"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/controlplane_events"]
+exclude = ["src/controlplane_events/migrations/**", "src/controlplane_events/migrate.py"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/controlplane_events", "LICENSE"]
 
 [dependency-groups]
 dev = ["pytest>=8.4.0"]
+owner-tests = ["fastapi>=0.115", "httpx>=0.28", "psycopg[binary]>=3.2", "pytest-asyncio>=1.2"]
 integration = [
+    "fastapi>=0.115",
+    "httpx>=0.28",
     "controlplane-db",
     "psycopg[binary]>=3.2",
     "pytest-asyncio>=1.2",

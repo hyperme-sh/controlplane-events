@@ -27,11 +27,11 @@ for event in event_contracts()['events']:
 async def consume():
     tenant, billing = uuid.uuid4(), uuid.uuid4()
     payload = events.PaymentSucceededPayload(tenant_id=tenant, billing_record_id=billing, amount_cents=42)
-    envelope = events.ControlPlaneEventEnvelope(event_type='payment.succeeded.v1', service='payment-service', tenant_id=tenant, payload=payload.to_envelope_payload())
+    envelope = events.ControlPlaneEventEnvelope(event_type='payment.succeeded.v3', service='payment-service', tenant_id=tenant, payload=payload.to_envelope_payload())
     received = []
     async def handler(actual, typed):
         received.append((actual.bus_event_id, typed.tenant_id, typed.billing_record_id))
-    routes = {'payment.succeeded.v1': (events.PaymentSucceededPayload, handler)}
+    routes = {'payment.succeeded.v3': (events.PaymentSucceededPayload, handler)}
     await dispatch_controlplane_envelope(envelope.model_dump_json().encode(), routes, bus_event_id=7)
     assert received == [(7, tenant, billing)]
     assert 'bus_event_id' not in envelope.model_dump(mode='json')

@@ -1,5 +1,5 @@
 {
-  "$id": "urn:controlplane:event:billing.record.created.v1",
+  "$id": "urn:controlplane:event:billing.record.created.v2",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
@@ -63,6 +63,24 @@
         "null"
       ]
     },
+    "processor_customer_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "processor_session_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "processor_subscription_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "product_id": {
       "type": [
         "string",
@@ -76,24 +94,6 @@
       ]
     },
     "status": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "stripe_customer_id": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "stripe_session_id": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "stripe_subscription_id": {
       "type": [
         "string",
         "null"
@@ -120,7 +120,7 @@
     "status"
   ],
   "type": "object",
-  "x-event-type": "billing.record.created.v1",
+  "x-event-type": "billing.record.created.v2",
   "x-owner": "platform",
   "x-topic": "controlplane.events.v1"
 }

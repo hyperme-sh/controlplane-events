@@ -1,0 +1,38 @@
+{
+  "$id": "urn:controlplane:event:payment.obligation.recorded.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "billing_record_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "lease_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "net_usdc_atoms": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "source_event_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "lease_id",
+    "billing_record_id",
+    "source_event_id",
+    "net_usdc_atoms"
+  ],
+  "type": "object",
+  "x-event-type": "payment.obligation.recorded.v1",
+  "x-owner": "payment-service",
+  "x-topic": "controlplane.events.v1"
+}
