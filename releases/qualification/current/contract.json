@@ -5,6 +5,7 @@
     "controlplane_events/contracts.py": "03b1b5b89c0e7f40efa8fe0760d5a87f4aabbeb52c4c8d2404df562f374618e9",
     "controlplane_events/envelope.py": "62afdd2fd418f8b9d2dfad8bddce3061e8a1422df2b9498a94ebc18207cf8602",
     "controlplane_events/envelope_parse.py": "d97a1f636819b28d72db0fa8f264f30098a9df01872d803ac1a4d73560febf98",
+    "controlplane_events/http_relay.py": "dcc329153f7f4fe2fe68ae7d181321a3bc91cb0905939046410a0a3f4b43306c",
     "controlplane_events/outbox.py": "6e0d68a0dd77bf0fdb4a8ff9d641e5f76a8b3f89047a566535746b394ffcee28",
     "controlplane_events/payloads/__init__.py": "b74e2edec9588bd71f4e4207cf1fbb708eed12d507296b51f7663b4aa4502b9e",
     "controlplane_events/payloads/acl_policy_updated.py": "a4a3d65d1aa33f41e28b41a141e2b0a1cc250bbe6788d1663eb20b3bfdcfb361",
