@@ -3,6 +3,7 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 unset PYTHONPATH UV_NO_SYNC
+python3 scripts/check_open_boundary.py src pyproject.toml
 uv sync --frozen
 check_tmp=$(mktemp -d)
 trap 'rm -rf "$check_tmp"' EXIT
