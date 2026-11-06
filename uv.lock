@@ -294,6 +294,12 @@ integration = [
     { name = "pytest-asyncio" },
     { name = "testcontainers" },
 ]
+owner-tests = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pytest-asyncio" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -317,6 +323,12 @@ integration = [
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pytest-asyncio", specifier = ">=1.2" },
     { name = "testcontainers", specifier = ">=4.9" },
+]
+owner-tests = [
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "pytest-asyncio", specifier = ">=1.2" },
 ]
 
 [[package]]

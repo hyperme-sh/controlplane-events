@@ -1,5 +1,6 @@
 """Owner migration and TEST cleanup against disposable PostgreSQL."""
 import os
+from pathlib import Path
 import uuid
 import pytest
 from sqlalchemy import create_engine, event, text
@@ -15,8 +16,22 @@ CREATE POLICY tenant ON records USING
 WITH CHECK (tenant_id = nullif(current_setting('app.current_tenant_id',true),'')::uuid);
 '''
 
+@pytest.fixture(scope='module')
+def test_authority():
+    admin = create_engine(os.environ['OWNED_OUTBOX_DATABASE_URL'])
+    with admin.begin() as db:
+        # Refuse a pre-existing marker: these tests must own a fresh fixture.
+        db.exec_driver_sql(Path(__file__).with_name('test_authority.sql').read_text())
+    try:
+        yield
+    finally:
+        with admin.begin() as db:
+            db.exec_driver_sql('DROP SCHEMA test_authority CASCADE')
+        admin.dispose()
+
+
 @pytest.fixture
-def owner():
+def owner(test_authority):
     admin = create_engine(os.environ['OWNED_OUTBOX_DATABASE_URL'])
     role='migration_'+uuid.uuid4().hex
     with admin.begin() as db:
