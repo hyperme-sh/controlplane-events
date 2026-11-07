@@ -267,3 +267,62 @@ def test_one_shot_and_permanent_delivery_failures_propagate():
 
     with pytest.raises(RuntimeError):
         run_relay(object(), object(), ["only", "other"], once=False, relay=permanent, rounds=3)
+
+
+def test_fanout_retries_same_facts_after_partial_receiver_commit():
+    from controlplane_events.http_relay import HttpEventFanout
+    states=[{'token':'first-fixture','fail':False,'requests':[],'receipts':{},'effects':0},
+            {'token':'second-fixture','fail':True,'requests':[],'receipts':{},'effects':0}]
+    servers=[];threads=[]
+    def handler(state):
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                raw=self.rfile.read(int(self.headers['Content-Length']))
+                if self.headers.get('Authorization')!='Bearer '+state['token']:
+                    self.send_response(401);self.end_headers();return
+                body=json.loads(raw);identity=self.headers['Idempotency-Key']
+                state['requests'].append((identity,raw))
+                if state['fail']:
+                    self.send_response(503);self.end_headers();return
+                if identity in state['receipts']:
+                    assert state['receipts'][identity]==raw
+                else:
+                    state['receipts'][identity]=raw;state['effects']+=1
+                self.send_response(200);self.end_headers()
+            def log_message(self,*args):pass
+        return Handler
+    try:
+        for state in states:
+            server=ThreadingHTTPServer(('127.0.0.1',0),handler(state));servers.append(server)
+            thread=Thread(target=server.serve_forever,daemon=True);thread.start();threads.append(thread)
+        send=HttpEventFanout(HttpEventSender(f'http://127.0.0.1:{server.server_port}/events',state['token'])
+                             for server,state in zip(servers,states))
+        tenant,eid=uuid.uuid4(),uuid.uuid4()
+        fact=ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1',service='payment-service',
+            tenant_id=tenant,payload={'tenant_id':str(tenant),'lease_id':str(uuid.uuid4()),
+            'billing_record_id':str(uuid.uuid4()),'source_event_id':str(uuid.uuid4()),'net_usdc_atoms':10})
+        with pytest.raises(TransientDeliveryError):send(eid,fact)
+        assert [state['effects'] for state in states]==[1,0]
+        states[1]['fail']=False;send(eid,fact)
+        assert [state['effects'] for state in states]==[1,1]
+        assert states[0]['requests']==states[1]['requests']
+        assert states[0]['requests'][0]==states[0]['requests'][1]
+    finally:
+        for server in servers:server.shutdown();server.server_close()
+        for thread in threads:thread.join(timeout=2)
+
+
+@pytest.mark.parametrize('count',[0,9])
+def test_fanout_destination_count_is_bounded(count):
+    from controlplane_events.http_relay import HttpEventFanout
+    with pytest.raises(ValueError):HttpEventFanout([lambda *args:None]*count)
+
+
+@pytest.mark.parametrize('arguments',[
+    ['--destination','https://first.invalid/events','--destination','https://second.invalid/events','--token-file','/unreadable'],
+    ['--destination','https://same.invalid/events','--destination','https://same.invalid/events','--token-file','/unreadable','--token-file','/unreadable']])
+def test_cli_rejects_ambiguous_fanout_before_reading_credentials(monkeypatch,arguments):
+    from controlplane_events.http_relay import main
+    monkeypatch.setattr('sys.argv',['relay','--database-url-file','/unreadable',*arguments])
+    with pytest.raises(SystemExit) as error:main()
+    assert error.value.code==2

@@ -140,3 +140,33 @@ def test_destination_filters_leave_other_routes_pending(database):
 def test_invalid_route_filters_refuse_before_database_access(filters):
     with pytest.raises(ValueError):
         relay_batch(None, uuid.uuid4(), None, **filters)
+
+
+def test_fanout_partial_commit_replays_receipts_before_acknowledging_outbox(database):
+    from controlplane_events.inbox import INBOX_DDL, receive
+    from controlplane_events.http_relay import HttpEventFanout, TransientDeliveryError
+    owner,foreign,_=database
+    for receiver in (owner,foreign):
+        with receiver.begin() as db:db.exec_driver_sql(INBOX_DDL)
+    tid,eid=uuid.uuid4(),uuid.uuid4()
+    fact=ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1',service='payment-service',tenant_id=tid,
+        payload={'tenant_id':str(tid),'lease_id':str(uuid.uuid4()),'billing_record_id':str(uuid.uuid4()),
+                 'source_event_id':str(uuid.uuid4()),'net_usdc_atoms':10})
+    with owner.begin() as db:
+        scoped(db,tid);enqueue(db,fact,event_id=eid)
+    first=[];second=[];fail=[True]
+    def send_first(event_id,envelope):
+        first.append(receive(owner,event_id,envelope,producer='payment-service'))
+    def send_second(event_id,envelope):
+        if fail[0]:raise TransientDeliveryError('receiver unavailable')
+        second.append(receive(foreign,event_id,envelope,producer='payment-service'))
+    send=HttpEventFanout([send_first,send_second])
+    with pytest.raises(TransientDeliveryError):relay_batch(owner,tid,send)
+    with owner.begin() as db:
+        scoped(db,tid)
+        assert db.scalar(text('SELECT count(*) FROM event_inbox'))==1
+        assert db.scalar(text('SELECT delivered_at FROM service_outbox WHERE id=:id'),{'id':eid}) is None
+    fail[0]=False
+    assert relay_batch(owner,tid,send)==1
+    assert first==[True,False] and second==[True]
+    assert relay_batch(owner,tid,send)==0

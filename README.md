@@ -242,3 +242,12 @@ letting HTTP requests select a callback. No forwarding is enabled by default.
 
 `billing.record.created.v2` is owned by `payment-service`; its wire payload is
 unchanged. Credentials from another producer cannot submit this event.
+
+
+For events that several owners must receive, repeat `--destination` and
+`--token-file` in matching order (at most eight). Each receiver has its own
+producer credential. A source outbox row is acknowledged only after every
+receiver commits. If a later destination fails, earlier committed receivers see
+the identical event UUID and facts on retry and must acknowledge their existing
+receipt without repeating domain effects. Changing topology is an explicit
+operator action; it does not reset any historical subscription or inbox.
