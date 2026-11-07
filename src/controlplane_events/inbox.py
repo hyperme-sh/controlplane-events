@@ -20,7 +20,7 @@ WITH CHECK (tenant_id = nullif(current_setting('app.current_tenant_id',true),'')
 '''
 
 
-def receive(engine, event_id, envelope, *, producer):
+def receive(engine, event_id, envelope, *, producer, forward=None):
     event_id=uuid.UUID(str(event_id))
     validate_event_envelope(envelope)
     if envelope.service != producer or envelope.tenant_id is None:
@@ -38,4 +38,8 @@ def receive(engine, event_id, envelope, *, producer):
             previous=db.scalar(text('SELECT envelope FROM event_inbox WHERE event_id=:id'),{'id':event_id})
             if previous != payload:
                 raise ValueError('Event identity reused with different facts')
+        elif forward is not None:
+            # Both the receipt and compatibility append commit on this connection.
+            # A failed append rolls back the receipt, preserving the producer ID.
+            forward(db, event_id, envelope)
         return inserted is not None

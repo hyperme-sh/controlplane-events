@@ -225,3 +225,20 @@ No foreign database connection or external broker is needed.
 integer cents. It carries no host entitlement or fee decision. Payment owns those
 decisions. The native `tests_postgres` suite proves rollback, retry identity,
 concurrent claims, tenant isolation and foreign-schema read/write refusal.
+
+
+Outbox relays can select repeatable `--event-type` values or exclude repeatable
+`--exclude-event-type` values. Only matching pending rows are locked, delivered
+and acknowledged; unrelated destinations retain their pending rows. The Python
+`relay_batch` API exposes the same optional filters and retains its unfiltered
+default.
+
+An events inbox may be constructed with an operator-supplied `forward` callback.
+It receives the existing database connection, event UUID and validated envelope
+only for a newly inserted receipt. The callback and receipt commit together;
+callback failure rolls both back, and identical retries never repeat the callback.
+This supports a compatibility append without granting producers SQL access or
+letting HTTP requests select a callback. No forwarding is enabled by default.
+
+`billing.record.created.v2` is owned by `payment-service`; its wire payload is
+unchanged. Credentials from another producer cannot submit this event.

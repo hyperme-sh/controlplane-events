@@ -286,11 +286,18 @@ def main():
     parser.add_argument('--destination', required=True)
     parser.add_argument('--tenant', type=uuid.UUID, action='append')
     parser.add_argument('--once', action='store_true')
+    filters = parser.add_mutually_exclusive_group()
+    filters.add_argument('--event-type', action='append')
+    filters.add_argument('--exclude-event-type', action='append')
     args = parser.parse_args()
     sender = HttpEventSender(args.destination, args.token_file.read_text().strip())
     engine = create_engine(normalize_sync_url(args.database_url_file.read_text()), pool_pre_ping=True)
     try:
-        run_relay(engine, sender, args.tenant, once=args.once)
+        from functools import partial
+        from controlplane_events.outbox import relay_batch
+        relay = partial(relay_batch, event_types=args.event_type,
+                        exclude_event_types=args.exclude_event_type)
+        run_relay(engine, sender, args.tenant, once=args.once, relay=relay)
     finally:
         engine.dispose()
 

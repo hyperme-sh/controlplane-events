@@ -121,6 +121,6 @@
   ],
   "type": "object",
   "x-event-type": "billing.record.created.v2",
-  "x-owner": "platform",
+  "x-owner": "payment-service",
   "x-topic": "controlplane.events.v1"
 }

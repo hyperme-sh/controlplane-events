@@ -154,7 +154,7 @@
       },
       "model": null,
       "module": null,
-      "owner": "platform"
+      "owner": "payment-service"
     },
     "budget.allocated.v1": {
       "model": "BudgetAllocatedPayload",
