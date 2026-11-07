@@ -66,6 +66,15 @@ def create_app(*, engine=None, producers=None, forward=None):
     @asynccontextmanager
     async def lifespan(app):
         app.state.engine=engine or create_engine(normalize_sync_url(Path(os.environ['DATABASE_URL_FILE']).read_text()),pool_pre_ping=True)
+        mode=os.environ.get('EVENTS_LEGACY_LOG_FORWARD', '0')
+        if mode not in ('0', '1'):
+            raise ValueError('EVENTS_LEGACY_LOG_FORWARD must be 0 or 1')
+        app.state.forward=forward
+        if mode == '1':
+            if forward is not None:
+                raise ValueError('Choose one configured forwarding destination')
+            from controlplane_events.legacy_broker import append_legacy_event
+            app.state.forward=append_legacy_event
         app.state.sync_engine=app.state.engine
         app.state.producers=producers if producers is not None else json.loads(Path(os.environ['EVENT_PRODUCER_TOKENS_FILE']).read_text())
         if not app.state.producers or any(not key or not value for key,value in app.state.producers.items()):
@@ -96,7 +105,7 @@ def create_app(*, engine=None, producers=None, forward=None):
         try:
             created=await asyncio.to_thread(
                 receive, request.app.state.engine, delivery.event_id, delivery.envelope,
-                producer=delivery.envelope.service, forward=forward)
+                producer=delivery.envelope.service, forward=request.app.state.forward)
         except ValueError as exc:
             raise HTTPException(409,str(exc)) from exc
         return {'event_id':str(delivery.event_id),'committed':True,'duplicate':not created}
