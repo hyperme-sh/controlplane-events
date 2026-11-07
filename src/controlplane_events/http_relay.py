@@ -272,6 +272,24 @@ def run_relay(engine, sender, tenants, *, once, sleep=time.sleep, monotonic=time
         sleep(1)
 
 
+class HttpEventFanout:
+    """Acknowledge an outbox row only after every configured receiver commits.
+
+    An earlier receiver may have committed before a later receiver fails. The
+    next attempt uses the same event identity and facts at every receiver, whose
+    durable inbox must suppress duplicate domain effects.
+    """
+    def __init__(self, senders):
+        from itertools import islice
+        self.senders=tuple(islice(senders,9))
+        if not 1 <= len(self.senders) <= 8:
+            raise ValueError('Configure between one and eight event destinations')
+
+    def __call__(self, event_id, envelope):
+        for sender in self.senders:
+            sender(event_id, envelope)
+
+
 def main():
     """One process per owning schema; compose supplies secrets as files."""
     import argparse
@@ -282,15 +300,20 @@ def main():
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--database-url-file', type=Path, required=True)
-    parser.add_argument('--token-file', type=Path, required=True)
-    parser.add_argument('--destination', required=True)
+    parser.add_argument('--token-file', type=Path, action='append', required=True)
+    parser.add_argument('--destination', action='append', required=True)
     parser.add_argument('--tenant', type=uuid.UUID, action='append')
     parser.add_argument('--once', action='store_true')
     filters = parser.add_mutually_exclusive_group()
     filters.add_argument('--event-type', action='append')
     filters.add_argument('--exclude-event-type', action='append')
     args = parser.parse_args()
-    sender = HttpEventSender(args.destination, args.token_file.read_text().strip())
+    if len(args.destination) != len(args.token_file) or not 1 <= len(args.destination) <= 8:
+        parser.error('Supply one token file per destination, with at most eight destinations')
+    if len(set(args.destination)) != len(args.destination):
+        parser.error('Duplicate destinations are not allowed')
+    sender = HttpEventFanout(HttpEventSender(url, path.read_text().strip())
+                            for url, path in zip(args.destination, args.token_file))
     engine = create_engine(normalize_sync_url(args.database_url_file.read_text()), pool_pre_ping=True)
     try:
         from functools import partial
