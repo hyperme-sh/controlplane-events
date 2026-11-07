@@ -473,3 +473,56 @@ def test_test_cleanup_refuses_live_rows_atomically(owner):
         db.exec_driver_sql("UPDATE records SET metadata=jsonb_build_object('network','mainnet')")
     with pytest.raises(ValueError,match='Live or unknown'):
         purge_test_tenant(engine,tenant)
+
+
+def test_inbox_forward_is_atomic_and_exactly_once(owner):
+    from controlplane_events.inbox import INBOX_DDL, receive
+    from controlplane_events.envelope import ControlPlaneEventEnvelope
+    engine, _, _ = owner
+    migrate(engine, revision='forward', ddl=INBOX_DDL+'CREATE TABLE forwarded (id uuid PRIMARY KEY);')
+    tid, eid = uuid.uuid4(), uuid.uuid4()
+    fact=ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1',
+        service='payment-service', tenant_id=tid, payload={'tenant_id':str(tid),
+        'lease_id':str(uuid.uuid4()),'billing_record_id':str(uuid.uuid4()),
+        'source_event_id':str(uuid.uuid4()),'net_usdc_atoms':10})
+    def append(db, event_id, envelope):
+        db.execute(text('INSERT INTO forwarded VALUES (:id)'), {'id':event_id})
+    def fail(db, event_id, envelope):
+        append(db, event_id, envelope)
+        raise RuntimeError('destination unavailable')
+    with pytest.raises(RuntimeError):
+        receive(engine, eid, fact, producer='payment-service', forward=fail)
+    with engine.begin() as db:
+        db.execute(text("SELECT set_config('app.current_tenant_id',:t,true)"), {'t':str(tid)})
+        assert db.scalar(text('SELECT count(*) FROM event_inbox')) == 0
+        assert db.scalar(text('SELECT count(*) FROM forwarded')) == 0
+    assert receive(engine, eid, fact, producer='payment-service', forward=append)
+    assert not receive(engine, eid, fact, producer='payment-service', forward=append)
+    changed=fact.model_copy(update={'payload':dict(fact.payload, net_usdc_atoms=11)})
+    with pytest.raises(ValueError, match='different facts'):
+        receive(engine, eid, changed, producer='payment-service', forward=append)
+    with engine.connect() as db:
+        assert db.scalar(text('SELECT count(*) FROM forwarded')) == 1
+
+
+def test_http_inbox_commits_configured_forward_once(owner):
+    from fastapi.testclient import TestClient
+    from controlplane_events.http_inbox import create_app
+    from controlplane_events.inbox import INBOX_DDL
+    from controlplane_events.envelope import ControlPlaneEventEnvelope
+    engine, _, _ = owner
+    migrate(engine, revision='http-forward', ddl=INBOX_DDL+'CREATE TABLE forwarded (id uuid PRIMARY KEY);')
+    tid, eid = uuid.uuid4(), uuid.uuid4()
+    fact=ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1', service='payment-service',
+        tenant_id=tid, payload={'tenant_id':str(tid),'lease_id':str(uuid.uuid4()),
+        'billing_record_id':str(uuid.uuid4()),'source_event_id':str(uuid.uuid4()),'net_usdc_atoms':10})
+    def append(db, event_id, envelope):
+        db.execute(text('INSERT INTO forwarded VALUES (:id)'), {'id':event_id})
+    app=create_app(engine=engine, producers={'payment-service':'fixture'}, forward=append)
+    with TestClient(app) as client:
+        headers={'Authorization':'Bearer fixture','Idempotency-Key':str(eid)}
+        body={'event_id':str(eid),'envelope':fact.model_dump(mode='json')}
+        assert client.post('/events', json=body, headers=headers).status_code == 200
+        assert client.post('/events', json=body, headers=headers).json()['duplicate']
+    with engine.connect() as db:
+        assert db.scalar(text('SELECT count(*) FROM forwarded')) == 1

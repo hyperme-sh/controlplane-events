@@ -115,7 +115,7 @@
       "status": "existing"
     },
     "billing.record.created.v2": {
-      "owner": "platform",
+      "owner": "payment-service",
       "schema": "billing.record.created.v2.json",
       "status": "existing"
     },

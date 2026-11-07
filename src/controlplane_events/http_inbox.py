@@ -61,7 +61,7 @@ async def authenticated_delivery(request: Request, tokens: dict) -> Delivery:
         raise HTTPException(400, 'Delivery body is not a valid event') from None
 
 
-def create_app(*, engine=None, producers=None):
+def create_app(*, engine=None, producers=None, forward=None):
     owned_engine=engine is None
     @asynccontextmanager
     async def lifespan(app):
@@ -96,7 +96,7 @@ def create_app(*, engine=None, producers=None):
         try:
             created=await asyncio.to_thread(
                 receive, request.app.state.engine, delivery.event_id, delivery.envelope,
-                producer=delivery.envelope.service)
+                producer=delivery.envelope.service, forward=forward)
         except ValueError as exc:
             raise HTTPException(409,str(exc)) from exc
         return {'event_id':str(delivery.event_id),'committed':True,'duplicate':not created}

@@ -112,3 +112,31 @@ def test_role_and_tenant_isolation(database):
         with owner.begin() as c:
             scoped(c, uuid.uuid4())
             enqueue(c, envelope(tid), event_id=uuid.uuid4())
+
+
+def test_destination_filters_leave_other_routes_pending(database):
+    owner, _, _ = database
+    tid = uuid.uuid4()
+    lease, payment = envelope(tid), ControlPlaneEventEnvelope(
+        event_type='payment.obligation.recorded.v1', service='payment-service', tenant_id=tid,
+        payload={'tenant_id':str(tid),'lease_id':str(uuid.uuid4()),
+                 'billing_record_id':str(uuid.uuid4()),'source_event_id':str(uuid.uuid4()),'net_usdc_atoms':10})
+    ids = [uuid.uuid4(), uuid.uuid4()]
+    with owner.begin() as c:
+        scoped(c, tid)
+        for eid, fact in zip(ids, (lease, payment)):
+            enqueue(c, fact, event_id=eid)
+    seen=[]
+    assert relay_batch(owner, tid, lambda eid, _: seen.append(eid),
+                       event_types=[lease.event_type]) == 1
+    assert seen == ids[:1]
+    assert relay_batch(owner, tid, lambda eid, _: seen.append(eid),
+                       exclude_event_types=[lease.event_type]) == 1
+    assert seen == ids
+
+
+@pytest.mark.parametrize('filters', [dict(event_types=[]), dict(event_types='type'),
+    dict(exclude_event_types=['']), dict(event_types=['x'], exclude_event_types=['x'])])
+def test_invalid_route_filters_refuse_before_database_access(filters):
+    with pytest.raises(ValueError):
+        relay_batch(None, uuid.uuid4(), None, **filters)
