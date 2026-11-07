@@ -526,3 +526,39 @@ def test_http_inbox_commits_configured_forward_once(owner):
         assert client.post('/events', json=body, headers=headers).json()['duplicate']
     with engine.connect() as db:
         assert db.scalar(text('SELECT count(*) FROM forwarded')) == 1
+
+
+def test_legacy_log_append_has_insert_only_authority_and_atomic_retry(owner):
+    from controlplane_events.inbox import INBOX_DDL, receive
+    from controlplane_events.legacy_broker import append_legacy_event
+    from controlplane_events.envelope import ControlPlaneEventEnvelope
+    engine, admin, role = owner
+    migrate(engine, revision='legacy-append', ddl=INBOX_DDL)
+    tid, eid = uuid.uuid4(), uuid.uuid4()
+    fact=ControlPlaneEventEnvelope(event_type='payment.obligation.recorded.v1', service='payment-service',
+        tenant_id=tid, payload={'tenant_id':str(tid),'lease_id':str(uuid.uuid4()),
+        'billing_record_id':str(uuid.uuid4()),'source_event_id':str(uuid.uuid4()),'net_usdc_atoms':10})
+    with admin.begin() as db:
+        # Refuse collisions rather than replace any existing fixture or history.
+        db.exec_driver_sql('CREATE TABLE public.controlplane_events (id bigserial PRIMARY KEY, event_type text, tenant_id uuid, envelope jsonb)')
+        db.exec_driver_sql(f'GRANT INSERT ON public.controlplane_events TO {role}')
+        db.exec_driver_sql(f'GRANT USAGE ON SEQUENCE public.controlplane_events_id_seq TO {role}')
+    try:
+        with pytest.raises(DBAPIError):
+            with engine.begin() as db:
+                db.exec_driver_sql('SELECT * FROM public.controlplane_events')
+        def fail(db, event_id, envelope):
+            append_legacy_event(db, event_id, envelope)
+            raise RuntimeError('lost append transaction')
+        with pytest.raises(RuntimeError):
+            receive(engine, eid, fact, producer='payment-service', forward=fail)
+        with admin.connect() as db:
+            assert db.scalar(text('SELECT count(*) FROM public.controlplane_events')) == 0
+        assert receive(engine, eid, fact, producer='payment-service', forward=append_legacy_event)
+        assert not receive(engine, eid, fact, producer='payment-service', forward=append_legacy_event)
+        with admin.connect() as db:
+            assert db.scalar(text('SELECT envelope FROM public.controlplane_events')) == fact.model_dump(mode='json')
+            assert db.scalar(text('SELECT count(*) FROM public.controlplane_events')) == 1
+    finally:
+        with admin.begin() as db:
+            db.exec_driver_sql('DROP TABLE public.controlplane_events')

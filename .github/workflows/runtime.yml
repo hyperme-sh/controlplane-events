@@ -1,0 +1,31 @@
+name: Events owner runtime
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  owner-runtime:
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "debrunner"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          version: 0.11.26
+          python-version: '3.13'
+          enable-cache: false
+      - name: Qualify exact standalone owner image
+        shell: bash
+        run: |
+          set -euo pipefail
+          scratch=$(mktemp -d "$RUNNER_TEMP/events-owner.XXXXXX")
+          image="events-owner:ci-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          trap 'docker image rm "$image" >/dev/null 2>&1 || true; rm -rf -- "$scratch"' EXIT
+          uv build --out-dir "$scratch/dist"
+          python3 selfhost/prepare-runtime.py --wheel "$scratch/dist/controlplane_events-0.1.0-py3-none-any.whl" --output "$scratch/context"
+          docker build -f Dockerfile --build-arg SOURCE_SHA="$(git rev-parse HEAD)" -t "$image" "$scratch/context"
+          python3 selfhost/qualify-runtime.py "$image" --wheel "$scratch/dist/controlplane_events-0.1.0-py3-none-any.whl"
