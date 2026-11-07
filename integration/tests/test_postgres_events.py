@@ -1107,3 +1107,61 @@ async def test_defer_preserves_final_retry_across_worker_restart(migrated_postgr
         assert await restarted.poll_once() == 0
     finally:
         await restarted.stop()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('invalid', ['envelope', 'payload', 'tenant', 'route'])
+async def test_strict_routing_retains_invalid_delivery_until_dead(migrated_postgres, invalid):
+    """Invalid wire facts are durable failures, never successful no-op acknowledgements."""
+    from pydantic import BaseModel
+    from sqlalchemy import bindparam
+    from sqlalchemy.dialects.postgresql import JSONB
+
+    class Payload(BaseModel):
+        tenant_id: uuid.UUID
+        number: int
+
+    event_type = 'test.strict.' + uuid.uuid4().hex
+    group = 'strict-' + uuid.uuid4().hex
+    tenant = uuid.uuid4()
+    envelope = ControlPlaneEventEnvelope(event_type=event_type, service='tests', tenant_id=tenant,
+        payload={'tenant_id': str(tenant), 'number': 1}).model_dump(mode='json')
+    if invalid == 'envelope':
+        envelope['service'] = None
+    elif invalid == 'payload':
+        envelope['payload'].pop('number')
+    elif invalid == 'tenant':
+        envelope['payload']['tenant_id'] = str(uuid.uuid4())
+    else:
+        envelope['event_type'] = 'different-body-event'
+    engine = create_engine(migrated_postgres)
+    with engine.begin() as db:
+        event_id = db.execute(text('INSERT INTO controlplane_events(event_type,tenant_id,envelope) '
+            'VALUES(:type,:tenant,:wire) RETURNING id').bindparams(bindparam('wire', type_=JSONB)),
+            {'type': event_type, 'tenant': tenant, 'wire': envelope}).scalar_one()
+    calls = []
+
+    async def handler(*args):
+        calls.append(args)
+
+    consumer = RoutingControlPlaneConsumer(migrated_postgres, ['controlplane.events.v1'], group,
+        {event_type: (Payload, handler)}, strict_delivery=True, max_attempts=2, retry_backoff_s=0)
+    try:
+        assert await consumer.poll_once() == 0
+        with engine.connect() as db:
+            status, attempts, delivered = db.execute(text('SELECT status,attempts,delivered_at '
+                'FROM controlplane_event_deliveries WHERE consumer_group=:group AND event_id=:id'),
+                {'group': group, 'id': event_id}).one()
+            assert (status, attempts, delivered) == ('pending', 1, None)
+        assert await consumer.poll_once() == 0
+        with engine.connect() as db:
+            status, attempts, delivered, error = db.execute(text('SELECT status,attempts,delivered_at,last_error '
+                'FROM controlplane_event_deliveries WHERE consumer_group=:group AND event_id=:id'),
+                {'group': group, 'id': event_id}).one()
+            assert (status, attempts, delivered) == ('dead', 2, None)
+            assert 'Control-plane' in error or 'control-plane' in error
+            assert str(tenant) not in error
+        assert calls == []
+    finally:
+        await consumer.stop()
+        engine.dispose()

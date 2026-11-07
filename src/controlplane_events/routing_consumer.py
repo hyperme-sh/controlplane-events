@@ -58,21 +58,37 @@ async def dispatch_controlplane_envelope(
     routes: dict[str, tuple[type[BaseModel], Handler]],
     *,
     bus_event_id: int | None = None,
+    strict: bool = False,
 ) -> None:
     """Parse one controlplane.events.v1 envelope and run the matching handler."""
 
-    envelope = parse_envelope_bytes(value)
+    if strict:
+        if not value:
+            raise ValueError('Invalid control-plane envelope')
+        try:
+            envelope = ControlPlaneEventEnvelope.model_validate_json(value, strict=True, extra='forbid')
+        except ValidationError:
+            # Retained delivery errors must not contain the rejected wire body.
+            raise ValueError('Invalid control-plane envelope') from None
+    else:
+        envelope = parse_envelope_bytes(value)
     if envelope is None:
+        if strict:
+            raise ValueError('Invalid control-plane envelope')
         return
     if bus_event_id is not None:
         envelope.bus_event_id = bus_event_id
     route = routes.get(envelope.event_type)
     if route is None:
+        if strict:
+            raise ValueError('Unsupported control-plane event type')
         return
     model_cls, handler = route
     try:
         typed = model_cls.model_validate(envelope.payload)
     except ValidationError:
+        if strict:
+            raise ValueError('Invalid control-plane event payload') from None
         logger.warning(
             "Payload validation failed for event_type=%s",
             envelope.event_type,
@@ -80,6 +96,8 @@ async def dispatch_controlplane_envelope(
         )
         return
     if not payload_matches_envelope_tenant(envelope, typed):
+        if strict:
+            raise ValueError('Control-plane event tenant mismatch')
         logger.warning(
             "Skipping event due to tenant mismatch: event_type=%s envelope=%s payload_tenant=%s",
             envelope.event_type,
@@ -123,9 +141,13 @@ class RoutingControlPlaneConsumer:
         retry_backoff_s: float | None = None,
         worker_id: str | None = None,
         source_service: str | None = None,
+        strict_delivery: bool = False,
     ) -> None:
         if source_service is not None and not source_service.strip():
             raise ValueError("source_service must be nonempty")
+        if type(strict_delivery) is not bool:
+            raise ValueError('strict_delivery must be boolean')
+        self._strict_delivery = strict_delivery
         self._source_service = source_service
         self._database_url = database_url
         self._topics = topics or [CONTROLPLANE_EVENTS_V1]
@@ -156,7 +178,7 @@ class RoutingControlPlaneConsumer:
         """Dispatch one raw envelope. Tests call this without starting the poller."""
 
         _ = key, headers
-        await dispatch_controlplane_envelope(value, self._routes)
+        await dispatch_controlplane_envelope(value, self._routes, strict=self._strict_delivery)
 
     async def start(self) -> None:
         if self._task is not None:
@@ -267,6 +289,7 @@ class RoutingControlPlaneConsumer:
                         envelope_to_bytes(row["envelope"]),
                         self._routes,
                         bus_event_id=event_id,
+                        strict=self._strict_delivery,
                     ),
                     timeout=self._handler_timeout_s(),
                 )

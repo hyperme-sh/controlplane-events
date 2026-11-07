@@ -20,6 +20,12 @@ Schemas live in `src/controlplane_events/schemas/`. `registry.json` names every 
 
 Event-store helpers in `controlplane_events.store` insert envelopes, normalize Postgres URLs to the asyncpg driver, prune through the database function `prune_controlplane_events`, and report pending-or-claimed depth plus dead deliveries via `delivery_counts_sync`.
 
+Consumers that must retain invalid deliveries can opt into
+`RoutingControlPlaneConsumer(..., strict_delivery=True)`. Invalid envelopes,
+unrouted types, invalid typed payloads and tenant mismatches then raise a
+sanitized error through the existing retry/dead-letter path instead of being
+acknowledged as skipped. The default routing behavior remains unchanged.
+
 ## Practical use
 
 The accepted stable package is `controlplane-events` 0.24.0, published as a wheel on the [`v0.24.0`](https://github.com/hyperme-sh/controlplane-events/releases/tag/v0.24.0) release. Python 3.13 or newer is required.

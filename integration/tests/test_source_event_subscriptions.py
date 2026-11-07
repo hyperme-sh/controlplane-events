@@ -34,6 +34,8 @@ def source_database(require_docker):
                 "CREATE ROLE controlplane; CREATE ROLE controlplane_app NOBYPASSRLS"
             )
         migrations.upgrade(url, chains=["events"], baseline_only=True)
+        # The frozen migration narrows the historical v1 relay, not the newer
+        # runtime v3 contract. Preserve its original wire identity in this fixture.
         # Existing subscriptions and events must survive the owner-chain upgrade.
         with engine.begin() as db:
             db.exec_driver_sql(
@@ -42,11 +44,11 @@ def source_database(require_docker):
         with engine.begin() as db:
             db.exec_driver_sql(
                 "SELECT register_controlplane_event_consumer('payment.deposit.servicebus-outbox.v1', "
-                "ARRAY['payment.succeeded.v3'], 'latest', 5)"
+                "ARRAY['payment.succeeded.v1'], 'latest', 5)"
             )
-        completed = insert(engine, "payment.succeeded.v3", SOURCE, 1)
-        insert(engine, "payment.succeeded.v3", SOURCE, 2)
-        insert(engine, "payment.succeeded.v3", "invoice-service", 3)
+        completed = insert(engine, "payment.succeeded.v1", SOURCE, 1)
+        insert(engine, "payment.succeeded.v1", SOURCE, 2)
+        insert(engine, "payment.succeeded.v1", "invoice-service", 3)
         with engine.begin() as db:
             db.execute(
                 text(
@@ -263,7 +265,7 @@ def test_upgrade_narrows_existing_relay_without_changing_delivery_history(
     _, engine = source_database
     group = "payment.deposit.servicebus-outbox.v1"
     with engine.begin() as db:
-        register(db, group, "payment.succeeded.v3", SOURCE)
+        register(db, group, "payment.succeeded.v1", SOURCE)
         records = db.execute(
             text(
                 "SELECT d.status, e.envelope->>'service' AS source, e.envelope->'payload'->>'n' AS n "
@@ -278,7 +280,7 @@ def test_upgrade_narrows_existing_relay_without_changing_delivery_history(
             ("pending", "invoice-service", "3"),
         ]
     # Preserve the old no-op backlog, but never enqueue more non-deposits.
-    insert(engine, "payment.succeeded.v3", "invoice-service", 4)
+    insert(engine, "payment.succeeded.v1", "invoice-service", 4)
     assert len(delivery_ids(engine, group)) == 3
 
 
