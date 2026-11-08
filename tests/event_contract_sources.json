@@ -27,6 +27,26 @@
     "auth.token.issued.v1": {
       "model": "AuthTokenIssuedPayload",
       "module": "controlplane_events.payloads.auth_events",
+      "optional_properties": {
+        "network_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "organization_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "scope_generation": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "scope_manifest_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        }
+      },
       "owner": "auth-service",
       "status": "existing"
     },

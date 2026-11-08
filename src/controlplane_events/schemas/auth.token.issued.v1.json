@@ -27,6 +27,24 @@
       "default": null,
       "title": "Grant Type"
     },
+    "network_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "organization_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "scope_generation": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "scope_manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
     "subject": {
       "description": "OIDC sub",
       "title": "Subject",
