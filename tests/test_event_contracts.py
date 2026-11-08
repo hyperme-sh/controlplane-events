@@ -63,3 +63,17 @@ def test_payment_v2_is_reserved_and_excludes_fine_location():
 def test_retired_private_contracts_cannot_enter_public_event_bus(event):
     with pytest.raises(KeyError):
         validate_event_payload(event, {})
+
+
+def test_scoped_token_issuance_accepts_only_declared_scope_fields():
+    common = dict(subject="host-owner", client_id="controlplane-frontend")
+    scope = dict(network_id="hypermesh", scope_generation="test-reset-v1",
+                 scope_manifest_sha256="a" * 64)
+    validate_event_payload("auth.token.issued.v1", common)
+    network = dict(common, **scope, grant_type="network_scope")
+    validate_event_payload("auth.token.issued.v1", network)
+    organization = dict(network, grant_type="organization_scope", organization_id=str(uuid.uuid4()))
+    validate_event_payload("auth.token.issued.v1", organization)
+    for extra in ({"scope_manifest_sha256": "invalid"}, {"access_token": "secret"}, {"organization_id": "invalid"}):
+        with pytest.raises(ValidationError):
+            validate_event_payload("auth.token.issued.v1", dict(organization, **extra))
