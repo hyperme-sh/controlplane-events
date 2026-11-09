@@ -68,14 +68,17 @@ def normalize_sync_url(url: str) -> str:
 
 
 def normalize_async_url(url: str) -> str:
+    # psycopg 3 supports SQLAlchemy async engines and libpq connection options.
+    # Respect an explicit driver: asyncpg's connect kwargs cannot accept those
+    # options (including the owning schema's search_path).
+    if url.startswith("postgresql+psycopg://"):
+        return url
     if url.startswith("postgresql://"):
         return "postgresql+asyncpg://" + url.removeprefix("postgresql://")
     if url.startswith("postgres://"):
         return "postgresql+asyncpg://" + url.removeprefix("postgres://")
     if url.startswith("postgresql+psycopg2://"):
         return "postgresql+asyncpg://" + url.removeprefix("postgresql+psycopg2://")
-    if url.startswith("postgresql+psycopg://"):
-        return "postgresql+asyncpg://" + url.removeprefix("postgresql+psycopg://")
     return url
 
 
@@ -83,6 +86,8 @@ def asyncpg_dsn(url: str) -> str:
     normalized = normalize_async_url(url)
     if normalized.startswith("postgresql+asyncpg://"):
         return "postgresql://" + normalized.removeprefix("postgresql+asyncpg://")
+    if normalized.startswith("postgresql+psycopg://"):
+        return "postgresql://" + normalized.removeprefix("postgresql+psycopg://")
     return normalized
 
 
