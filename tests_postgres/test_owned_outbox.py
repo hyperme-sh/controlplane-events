@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import pytest
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.engine import make_url
 from controlplane_events.envelope import ControlPlaneEventEnvelope
 from controlplane_events.outbox import OUTBOX_DDL, enqueue, relay_batch
 
@@ -57,6 +58,26 @@ def envelope(tenant):
 
 def scoped(c, tenant):
     c.execute(text("SELECT set_config('app.current_tenant_id', :tid, true)"), {"tid":str(tenant)})
+
+
+@pytest.mark.asyncio
+async def test_async_outbox_preserves_explicit_driver_role_and_schema_options(database):
+    from controlplane_events.publisher import OwnedOutboxPublisher
+    owner,_,schema=database
+    url=make_url(os.environ['OWNED_OUTBOX_DATABASE_URL']).set(drivername='postgresql+psycopg')
+    url=url.update_query_dict({'options':f'-c role={schema} -c search_path={schema}'})
+    publisher=OwnedOutboxPublisher(url.render_as_string(hide_password=False),'hypermesh-plane')
+    tenant,other=uuid.uuid4(),uuid.uuid4();fact=envelope(tenant)
+    try:
+        await publisher.publish(tenant_id=tenant,event_type=fact.event_type,payload=fact.payload)
+        async with publisher._engine.connect() as c:
+            identity=(await c.execute(text('SELECT current_user,current_schema()'))).one()
+            assert tuple(identity)==(schema,schema)
+            for tid,expected in ((tenant,1),(other,0)):
+                await c.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(tid)})
+                assert (await c.execute(text('SELECT count(*) FROM service_outbox'))).scalar_one()==expected
+    finally:
+        await publisher.stop()
 
 
 def test_event_failure_rolls_back_domain_write(database):
