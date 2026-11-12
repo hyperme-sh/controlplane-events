@@ -154,6 +154,11 @@
       "schema": "experiment.conversion.v1.json",
       "status": "reserved"
     },
+    "experiment.conversion.v2": {
+      "owner": "controlplane-events",
+      "schema": "experiment.conversion.v2.json",
+      "status": "reserved"
+    },
     "experiment.exposure.v1": {
       "owner": "controlplane-events",
       "schema": "experiment.exposure.v1.json",

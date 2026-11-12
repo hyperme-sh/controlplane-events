@@ -3,6 +3,8 @@
 from controlplane_events.payloads.experiment_events import (
     ExperimentExposurePayload,
     ExperimentConversionPayload,
+    ExperimentConversionV2Payload,
+    named_conversion_payload,
     hash_experiment_assignment,
 )
 from controlplane_events.envelope import ControlPlaneEventEnvelope
@@ -35,6 +37,8 @@ from controlplane_events.topics import CONTROLPLANE_EVENTS_V1
 __all__ = [
     "ExperimentExposurePayload",
     "ExperimentConversionPayload",
+    "ExperimentConversionV2Payload",
+    "named_conversion_payload",
     "hash_experiment_assignment",
     "AclPolicyUpdatedPayload",
     "AuthLoginSuccessPayload",

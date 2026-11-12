@@ -1,0 +1,71 @@
+{
+  "$id": "urn:controlplane:event:experiment.conversion.v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A named conversion from the experiment's configured metric allowlist.",
+  "properties": {
+    "assignment_hash": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Assignment Hash",
+      "type": "string"
+    },
+    "conversion_key": {
+      "maxLength": 64,
+      "not": {
+        "pattern": "[^a-z0-9_-]"
+      },
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "title": "Conversion Key",
+      "type": "string"
+    },
+    "experiment_key": {
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "title": "Experiment Key",
+      "type": "string"
+    },
+    "release_tag": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Release Tag"
+    },
+    "surface": {
+      "enum": [
+        "s3r.ch",
+        "hyperme.sh",
+        "portal"
+      ],
+      "title": "Surface",
+      "type": "string"
+    },
+    "variant": {
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+      "title": "Variant",
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_key",
+    "variant",
+    "assignment_hash",
+    "surface",
+    "conversion_key"
+  ],
+  "title": "ExperimentConversionV2Payload",
+  "type": "object",
+  "x-event-type": "experiment.conversion.v2",
+  "x-owner": "controlplane-events",
+  "x-topic": "controlplane.events.v1"
+}
