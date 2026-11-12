@@ -29,6 +29,8 @@ from controlplane_events.payloads.tokens_used import TokensUsedEvent
 from controlplane_events.payloads.user_created import UserCreatedEvent
 
 __all__ = [
+    "AccountingQuantityV2", "AccountingReservedPayloadV2", "AccountingCommittedPayloadV2",
+    "AccountingReleasedPayloadV2", "UsageRecordedPayloadV2",
     'AccountingQuantity', 'AccountingReservedPayload', 'AccountingCommittedPayload',
     'AccountingReleasedPayload', 'UsageRecordedPayload', 'accounting_event_key',
     "ExperimentExposurePayload",
@@ -57,4 +59,9 @@ __all__ = [
 from controlplane_events.payloads.accounting_events import (
     AccountingQuantity, AccountingReservedPayload, AccountingCommittedPayload,
     AccountingReleasedPayload, UsageRecordedPayload, accounting_event_key,
+)
+
+from .accounting_events import (
+    AccountingQuantityV2, AccountingReservedPayloadV2, AccountingCommittedPayloadV2,
+    AccountingReleasedPayloadV2, UsageRecordedPayloadV2,
 )

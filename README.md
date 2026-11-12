@@ -287,3 +287,13 @@ Owner transaction cases use a separate empty database inside the nightly
 disposable PostgreSQL instance. Their legacy table creation and teardown cannot
 modify the migrated event-store database used by the other cases. The harness
 drops that database after the cases finish, including on failure.
+
+Neutral accounting v1 quantities remain frozen to tokens and milliseconds.
+The parallel `accounting.reserved.v2`, `accounting.committed.v2`,
+`accounting.released.v2` and `usage.recorded.v2` payloads also support integer
+`access` counts. Publishers keep v1 for existing units and use v2 for access;
+consumers explicitly subscribe to the version they understand. No duplicate
+v1 approximation or unit conversion is emitted for access. The existing event
+identity, tenant binding, strict payload privacy and atomic dedup rules apply.
+Organization principals use the same opaque subject field, while private actor
+records stay in the serving owner. Events never grant access by themselves.

@@ -6,14 +6,32 @@
       "owner": "controlplane-accounting",
       "status": "reserved"
     },
+    "accounting.committed.v2": {
+      "model": "AccountingCommittedPayloadV2",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
+    },
     "accounting.released.v1": {
       "model": "AccountingReleasedPayload",
       "module": "controlplane_events.payloads.accounting_events",
       "owner": "controlplane-accounting",
       "status": "reserved"
     },
+    "accounting.released.v2": {
+      "model": "AccountingReleasedPayloadV2",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
+    },
     "accounting.reserved.v1": {
       "model": "AccountingReservedPayload",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
+    },
+    "accounting.reserved.v2": {
+      "model": "AccountingReservedPayloadV2",
       "module": "controlplane_events.payloads.accounting_events",
       "owner": "controlplane-accounting",
       "status": "reserved"
@@ -359,6 +377,12 @@
     },
     "usage.recorded.v1": {
       "model": "UsageRecordedPayload",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
+    },
+    "usage.recorded.v2": {
+      "model": "UsageRecordedPayloadV2",
       "module": "controlplane_events.payloads.accounting_events",
       "owner": "controlplane-accounting",
       "status": "reserved"

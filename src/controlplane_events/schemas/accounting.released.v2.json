@@ -1,0 +1,82 @@
+{
+  "$defs": {
+    "AccountingQuantityV2": {
+      "additionalProperties": false,
+      "description": "Access counts add a new event version; frozen v1 units stay unchanged.",
+      "properties": {
+        "amount": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Amount",
+          "type": "integer"
+        },
+        "unit": {
+          "enum": [
+            "tokens",
+            "milliseconds",
+            "access"
+          ],
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "title": "AccountingQuantityV2",
+      "type": "object"
+    }
+  },
+  "$id": "urn:controlplane:event:accounting.released.v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "quantity": {
+      "$ref": "#/$defs/AccountingQuantityV2"
+    },
+    "reservation_id": {
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$",
+      "title": "Reservation Id",
+      "type": "string"
+    },
+    "resource": {
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$",
+      "title": "Resource",
+      "type": "string"
+    },
+    "subject_id": {
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$",
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "tenant_id",
+    "subject_id",
+    "resource",
+    "quantity",
+    "reservation_id"
+  ],
+  "title": "AccountingReleasedPayloadV2",
+  "type": "object",
+  "x-event-type": "accounting.released.v2",
+  "x-owner": "controlplane-accounting",
+  "x-topic": "controlplane.events.v1"
+}
