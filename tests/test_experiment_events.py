@@ -8,6 +8,7 @@ from pydantic import ValidationError as ModelError
 
 from controlplane_events import (
     ExperimentConversionPayload,
+    ExperimentConversionV2Payload,
     ExperimentExposurePayload,
     PostgresEventPublisher,
     hash_experiment_assignment,
@@ -18,6 +19,7 @@ from controlplane_events.envelope import ControlPlaneEventEnvelope
 EVENTS = [
     ("experiment.exposure.v1", ExperimentExposurePayload),
     ("experiment.conversion.v1", ExperimentConversionPayload),
+    ("experiment.conversion.v2", ExperimentConversionV2Payload),
 ]
 PRIVATE_FIELDS = [
     "email", "name", "wallet", "wallet_address", "sea_public_key", "SEA_public_key",
@@ -27,7 +29,9 @@ PRIVATE_FIELDS = [
 ]
 
 
-def payload():
+def payload(event="experiment.conversion.v1"):
+    if event == "experiment.conversion.v2":
+        return dict(payload(), conversion_key="sign_in_completed")
     return dict(experiment_key="signup-layout", variant="treatment", surface="portal",
                 assignment_hash=hash_experiment_assignment("assignment-example", secret=b"s" * 32))
 
@@ -35,7 +39,7 @@ def payload():
 @pytest.mark.parametrize("event,model", EVENTS)
 @pytest.mark.parametrize("surface", ["s3r.ch", "hyperme.sh", "portal"])
 def test_experiment_wire_roundtrip(event, model, surface):
-    data = dict(payload(), surface=surface)
+    data = dict(payload(event), surface=surface)
     typed = model(**data)
     assert typed.to_envelope_payload() == data
     validate_event_payload(event, typed.to_envelope_payload())
@@ -50,7 +54,7 @@ def test_experiment_wire_roundtrip(event, model, surface):
 @pytest.mark.parametrize("event,model", EVENTS)
 @pytest.mark.parametrize("field", PRIVATE_FIELDS)
 def test_reject_private_fields_in_models_and_wire_schema(event, model, field):
-    data = dict(payload(), **{field: "private-example"})
+    data = dict(payload(event), **{field: "private-example"})
     with pytest.raises(ModelError):
         model(**data)
     with pytest.raises(SchemaError):
@@ -67,7 +71,7 @@ def test_reject_private_fields_in_models_and_wire_schema(event, model, field):
     {"surface": "unknown"}, {"surface": "portal\n"}, {"experiment_key": ""},
 ])
 def test_reject_raw_assignments_and_unstructured_labels(event, model, change):
-    data = dict(payload(), **change)
+    data = dict(payload(event), **change)
     with pytest.raises(ModelError):
         model(**data)
     with pytest.raises(SchemaError):
@@ -77,7 +81,7 @@ def test_reject_raw_assignments_and_unstructured_labels(event, model, change):
 @pytest.mark.parametrize("event,model", EVENTS)
 @pytest.mark.parametrize("field", ["experiment_key", "variant", "assignment_hash", "surface"])
 def test_required_experiment_fields(event, model, field):
-    data = payload()
+    data = payload(event)
     del data[field]
     with pytest.raises(ModelError):
         model(**data)
@@ -103,11 +107,11 @@ def test_publisher_rejects_untyped_private_payload_before_storage(event, model):
     publisher = PostgresEventPublisher("postgresql://unused", "portal")
     session = Mock()
     with patch("controlplane_events.publisher.insert_event_sync", return_value=7) as insert:
-        assert publisher.publish_in_session(session, tenant_id=None, event_type=event, payload=payload()) == 7
+        assert publisher.publish_in_session(session, tenant_id=None, event_type=event, payload=payload(event)) == 7
         insert.reset_mock()
         for field in PRIVATE_FIELDS:
             with pytest.raises(ValueError, match="^invalid experiment event payload$") as error:
                 publisher.publish_in_session(session, tenant_id=None, event_type=event,
-                                             payload=dict(payload(), **{field: "private-example"}))
+                                             payload=dict(payload(event), **{field: "private-example"}))
             assert "private-example" not in str(error.value)
         insert.assert_not_called()

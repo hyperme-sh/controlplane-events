@@ -194,6 +194,12 @@
       "owner": "controlplane-events",
       "status": "reserved"
     },
+    "experiment.conversion.v2": {
+      "model": "ExperimentConversionV2Payload",
+      "module": "controlplane_events.payloads.experiment_events",
+      "owner": "controlplane-events",
+      "status": "reserved"
+    },
     "experiment.exposure.v1": {
       "model": "ExperimentExposurePayload",
       "module": "controlplane_events.payloads.experiment_events",

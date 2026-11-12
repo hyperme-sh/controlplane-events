@@ -39,3 +39,28 @@ class ExperimentExposurePayload(_ExperimentPayload):
 
 class ExperimentConversionPayload(_ExperimentPayload):
     """The conversion named by the experiment configuration occurred."""
+
+
+class ExperimentConversionV2Payload(_ExperimentPayload):
+    """A named conversion from the experiment's configured metric allowlist."""
+
+    conversion_key: ExperimentLabel = Field(
+        json_schema_extra={"not": {"pattern": "[^a-z0-9_-]"}}
+    )
+
+    def require_metric(self, allowed_metrics: frozenset[str]) -> None:
+        """Validate against trusted experiment configuration before counting."""
+        if self.conversion_key not in allowed_metrics:
+            raise ValueError("conversion metric is not configured")
+
+
+def named_conversion_payload(
+    payload: dict[str, object], *, allowed_metrics: frozenset[str],
+    supported_event_types: frozenset[str],
+) -> ExperimentConversionV2Payload:
+    """Refuse unsupported destinations; never downgrade a named metric to v1."""
+    if "experiment.conversion.v2" not in supported_event_types:
+        raise ValueError("destination does not support named conversions")
+    typed = ExperimentConversionV2Payload.model_validate(payload)
+    typed.require_metric(allowed_metrics)
+    return typed
