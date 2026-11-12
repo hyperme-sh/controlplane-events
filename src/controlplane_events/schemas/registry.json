@@ -54,9 +54,19 @@
       "schema": "aiuditor.contract.bound.v1.json",
       "status": "existing"
     },
+    "aiuditor.contract.bound.v2": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.bound.v2.json",
+      "status": "existing"
+    },
     "aiuditor.contract.created.v1": {
       "owner": "aiuditor",
       "schema": "aiuditor.contract.created.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.contract.created.v2": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.created.v2.json",
       "status": "existing"
     },
     "aiuditor.contract.fulfilled.v1": {
@@ -64,9 +74,19 @@
       "schema": "aiuditor.contract.fulfilled.v1.json",
       "status": "existing"
     },
+    "aiuditor.contract.fulfilled.v2": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.fulfilled.v2.json",
+      "status": "existing"
+    },
     "aiuditor.contract.signed.v1": {
       "owner": "aiuditor",
       "schema": "aiuditor.contract.signed.v1.json",
+      "status": "existing"
+    },
+    "aiuditor.contract.signed.v2": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.contract.signed.v2.json",
       "status": "existing"
     },
     "aiuditor.contract.violated.v1": {
