@@ -188,6 +188,18 @@
       "owner": "ai-service",
       "status": "existing"
     },
+    "experiment.conversion.v1": {
+      "model": "ExperimentConversionPayload",
+      "module": "controlplane_events.payloads.experiment_events",
+      "owner": "controlplane-events",
+      "status": "reserved"
+    },
+    "experiment.exposure.v1": {
+      "model": "ExperimentExposurePayload",
+      "module": "controlplane_events.payloads.experiment_events",
+      "owner": "controlplane-events",
+      "status": "reserved"
+    },
     "group.member.added.v1": {
       "model": "GroupMemberAddedPayload",
       "module": "controlplane_events.payloads.group_member_added",

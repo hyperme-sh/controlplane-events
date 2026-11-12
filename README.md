@@ -223,7 +223,7 @@ No foreign database connection or external broker is needed.
 
 `hypermesh.lease.outcome.v1` carries execution and certification facts plus delivered
 integer cents. It carries no host entitlement or fee decision. Payment owns those
-decisions. The native `tests_postgres` suite proves rollback, retry identity,
+decisions. The native `integration/tests/owned_outbox` suite proves rollback, retry identity,
 concurrent claims, tenant isolation and foreign-schema read/write refusal.
 
 
@@ -251,3 +251,39 @@ receiver commits. If a later destination fails, earlier committed receivers see
 the identical event UUID and facts on retry and must acknowledge their existing
 receipt without repeating domain effects. Changing topology is an explicit
 operator action; it does not reset any historical subscription or inbox.
+
+## Experiment events
+
+`experiment.exposure.v1` and `experiment.conversion.v1` are reserved first-party
+contracts on `controlplane.events.v1`. They record an actually shown variant or
+the conversion defined by that experiment's configuration. Registering these
+contracts does not enable experiments or add a consumer subscription.
+
+Use `ExperimentExposurePayload` or `ExperimentConversionPayload` with
+`experiment_key`, `variant`, `assignment_hash`, and `surface` (`s3r.ch`,
+`hyperme.sh`, or `portal`). `release_tag` is optional. Experiment and variant
+labels are lowercase configuration slugs, limited to 64 characters; release
+tags are bounded ASCII labels. These fields must never hold customer content.
+
+Create `assignment_hash` using `hash_experiment_assignment(identifier,
+secret=server_secret)`. The secret must be at least 32 random bytes, kept only on
+the server. This helper uses domain-separated HMAC-SHA256. Keep the secret
+stable for the intended assignment window; changing it changes the resulting
+hashes. Never send the original assignment cookie, user ID or SEA key. A schema
+can check hash format but cannot prove how a caller produced it.
+
+Both the typed models and bundled JSON schemas reject extra fields, including
+email, name, wallet, SEA public key, raw user ID, cookie, IP, user agent, date of
+birth, age, prompts and message bodies. There is no free-form metadata field.
+The publisher validates these two types before persistence even when callers
+supply an untyped dictionary. Existing event contracts keep their behavior.
+
+PostgreSQL and owner transaction cases run only in the central infra nightly
+`events-postgres` suite through `scripts/check-integration.sh`. This includes
+the source, wheel and rebuilt-source runs. PR and main checks retain package
+unit/contract validation and the scoped standalone runtime smoke.
+
+Owner transaction cases use a separate empty database inside the nightly
+disposable PostgreSQL instance. Their legacy table creation and teardown cannot
+modify the migrated event-store database used by the other cases. The harness
+drops that database after the cases finish, including on failure.

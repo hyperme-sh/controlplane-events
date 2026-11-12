@@ -55,6 +55,13 @@ class PostgresEventPublisher:
         payload: dict[str, Any],
         correlation_id: str | None,
     ) -> ControlPlaneEventEnvelope:
+        if event_type in {"experiment.exposure.v1", "experiment.conversion.v1"}:
+            from jsonschema import ValidationError
+            from controlplane_events.contracts import validate_event_payload
+            try:
+                validate_event_payload(event_type, payload)
+            except ValidationError:
+                raise ValueError("invalid experiment event payload") from None
         refuse_forbidden_payload(payload)
         return ControlPlaneEventEnvelope(
             event_type=event_type,
