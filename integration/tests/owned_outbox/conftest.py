@@ -2,6 +2,8 @@
 import pytest
 
 
-@pytest.fixture(autouse=True)
-def owned_database_url(migrated_postgres, monkeypatch):
-    monkeypatch.setenv("OWNED_OUTBOX_DATABASE_URL", migrated_postgres)
+@pytest.fixture(scope="session", autouse=True)
+def owned_database_url(migrated_postgres):
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv("OWNED_OUTBOX_DATABASE_URL", migrated_postgres)
+        yield
