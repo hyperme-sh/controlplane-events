@@ -282,3 +282,8 @@ PostgreSQL and owner transaction cases run only in the central infra nightly
 `events-postgres` suite through `scripts/check-integration.sh`. This includes
 the source, wheel and rebuilt-source runs. PR and main checks retain package
 unit/contract validation and the scoped standalone runtime smoke.
+
+Owner transaction cases use a separate empty database inside the nightly
+disposable PostgreSQL instance. Their legacy table creation and teardown cannot
+modify the migrated event-store database used by the other cases. The harness
+drops that database after the cases finish, including on failure.
