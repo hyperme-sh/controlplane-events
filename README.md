@@ -223,7 +223,7 @@ No foreign database connection or external broker is needed.
 
 `hypermesh.lease.outcome.v1` carries execution and certification facts plus delivered
 integer cents. It carries no host entitlement or fee decision. Payment owns those
-decisions. The native `tests_postgres` suite proves rollback, retry identity,
+decisions. The native `integration/tests/owned_outbox` suite proves rollback, retry identity,
 concurrent claims, tenant isolation and foreign-schema read/write refusal.
 
 
@@ -277,3 +277,8 @@ email, name, wallet, SEA public key, raw user ID, cookie, IP, user agent, date o
 birth, age, prompts and message bodies. There is no free-form metadata field.
 The publisher validates these two types before persistence even when callers
 supply an untyped dictionary. Existing event contracts keep their behavior.
+
+PostgreSQL and owner transaction cases run only in the central infra nightly
+`events-postgres` suite through `scripts/check-integration.sh`. This includes
+the source, wheel and rebuilt-source runs. PR and main checks retain package
+unit/contract validation and the scoped standalone runtime smoke.
