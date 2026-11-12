@@ -1,0 +1,48 @@
+{
+  "accounting.reserved.v1": {
+    "event_id": "event-reserved",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 1,
+      "unit": "tokens"
+    },
+    "reservation_id": "reservation-a",
+    "quote_id": "quote-a"
+  },
+  "accounting.committed.v1": {
+    "event_id": "event-committed",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 1,
+      "unit": "tokens"
+    },
+    "reservation_id": "reservation-a"
+  },
+  "accounting.released.v1": {
+    "event_id": "event-released",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 0,
+      "unit": "tokens"
+    },
+    "reservation_id": "reservation-a"
+  },
+  "usage.recorded.v1": {
+    "event_id": "event-usage",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 1,
+      "unit": "tokens"
+    },
+    "usage_id": "usage-a",
+    "meter": "inference"
+  }
+}

@@ -63,13 +63,25 @@ class PostgresEventPublisher:
             except ValidationError:
                 raise ValueError("invalid experiment event payload") from None
         refuse_forbidden_payload(payload)
-        return ControlPlaneEventEnvelope(
+        envelope = ControlPlaneEventEnvelope(
             event_type=event_type,
             service=self._service_name,
             tenant_id=tenant_id,
             payload=payload,
             correlation_id=correlation_id,
         )
+        from controlplane_events.payloads.accounting_events import ACCOUNTING_MODELS
+        if event_type in ACCOUNTING_MODELS:
+            from controlplane_events.contracts import validate_event_envelope
+            envelope.event_id = payload.get('event_id')
+            from jsonschema import ValidationError as SchemaError
+            from pydantic import ValidationError as ModelError
+            try:
+                validate_event_envelope(envelope)
+            except (SchemaError, ModelError, ValueError):
+                # Contract failures must not include raw payload values in logs.
+                raise ValueError('invalid accounting event payload') from None
+        return envelope
 
     async def start(self) -> None:
         if self._engine is not None:

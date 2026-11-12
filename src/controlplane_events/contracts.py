@@ -33,6 +33,9 @@ def _validator(event_type: str) -> Draft202012Validator:
 def validate_event_payload(event_type: str, payload: dict[str, Any]) -> None:
     """Validate JSON wire values with format checking, without coercing or importing owners."""
     _validator(event_type).validate(payload)
+    from controlplane_events.payloads.accounting_events import ACCOUNTING_MODELS
+    if event_type in ACCOUNTING_MODELS:
+        ACCOUNTING_MODELS[event_type].model_validate(payload)
 
 
 def validate_event_envelope(envelope: ControlPlaneEventEnvelope, *, topic: str = CONTROLPLANE_EVENTS_V1) -> None:
@@ -40,6 +43,10 @@ def validate_event_envelope(envelope: ControlPlaneEventEnvelope, *, topic: str =
     if topic != CONTROLPLANE_EVENTS_V1:
         raise ValueError('event contract requires controlplane.events.v1')
     validate_event_payload(envelope.event_type, envelope.payload)
+    from controlplane_events.payloads.accounting_events import ACCOUNTING_MODELS
+    if envelope.event_type in ACCOUNTING_MODELS:
+        if envelope.event_id != envelope.payload['event_id']:
+            raise ValueError('accounting envelope event_id must match payload')
     tenant_id = envelope.payload.get('tenant_id')
     if tenant_id is not None and str(envelope.tenant_id) != str(tenant_id):
         raise ValueError('event payload tenant does not match envelope tenant')
