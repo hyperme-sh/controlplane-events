@@ -105,6 +105,12 @@ async def dispatch_controlplane_envelope(
             getattr(typed, "tenant_id", None),
         )
         return
+    from controlplane_events.payloads.accounting_events import ACCOUNTING_MODELS
+    if envelope.event_type in ACCOUNTING_MODELS and envelope.event_id != typed.event_id:
+        if strict:
+            raise ValueError('Accounting event identity mismatch')
+        logger.warning('Accounting event identity mismatch')
+        return
     await handler(envelope, typed)
 
 

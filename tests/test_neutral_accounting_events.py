@@ -71,3 +71,19 @@ def test_duplicate_reordering_and_older_envelope_compatibility():
     old=ControlPlaneEventEnvelope(event_type='old.event.v1',service='old')
     assert 'event_id' not in old.model_dump(mode='json')
     assert ControlPlaneEventEnvelope.model_validate(dict(old.model_dump(),future_field=True)).event_id is None
+
+
+@pytest.mark.parametrize('strict',[False,True])
+def test_dispatch_refuses_mismatched_replay_identity(strict):
+    import asyncio
+    from controlplane_events.routing_consumer import dispatch_controlplane_envelope
+    event='usage.recorded.v1'
+    payload=FIXTURES[event]
+    envelope=ControlPlaneEventEnvelope(event_type=event,service='accounting',tenant_id=uuid.UUID(payload['tenant_id']),event_id='wrong',payload=payload)
+    calls=[]
+    async def handler(*args):calls.append(args)
+    coroutine=dispatch_controlplane_envelope(envelope.model_dump_json().encode(),{event:(ACCOUNTING_MODELS[event],handler)},strict=strict)
+    if strict:
+        with pytest.raises(ValueError,match='identity'):asyncio.run(coroutine)
+    else:asyncio.run(coroutine)
+    assert calls==[]
