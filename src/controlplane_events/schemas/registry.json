@@ -149,6 +149,16 @@
       "schema": "budget.depleted.v1.json",
       "status": "existing"
     },
+    "experiment.conversion.v1": {
+      "owner": "controlplane-events",
+      "schema": "experiment.conversion.v1.json",
+      "status": "reserved"
+    },
+    "experiment.exposure.v1": {
+      "owner": "controlplane-events",
+      "schema": "experiment.exposure.v1.json",
+      "status": "reserved"
+    },
     "gateway_api_access_v1": {
       "owner": "controlplane-edge",
       "schema": "gateway_api_access_v1.json",

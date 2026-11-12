@@ -1,3 +1,8 @@
+from controlplane_events.payloads.experiment_events import (
+    ExperimentExposurePayload,
+    ExperimentConversionPayload,
+    hash_experiment_assignment,
+)
 from controlplane_events.payloads.auth_events import (
     AuthLoginSuccessPayload,
     AuthTokenIssuedPayload,
@@ -22,6 +27,9 @@ from controlplane_events.payloads.tokens_used import TokensUsedEvent
 from controlplane_events.payloads.user_created import UserCreatedEvent
 
 __all__ = [
+    "ExperimentExposurePayload",
+    "ExperimentConversionPayload",
+    "hash_experiment_assignment",
     "AclPolicyUpdatedPayload",
     "BudgetDepletedEvent",
     "AuthLoginSuccessPayload",

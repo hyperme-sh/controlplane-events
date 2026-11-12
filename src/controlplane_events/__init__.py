@@ -1,5 +1,10 @@
 """Postgres event log and envelope helpers for the control plane."""
 
+from controlplane_events.payloads.experiment_events import (
+    ExperimentExposurePayload,
+    ExperimentConversionPayload,
+    hash_experiment_assignment,
+)
 from controlplane_events.envelope import ControlPlaneEventEnvelope
 from controlplane_events.envelope_parse import (
     extract_payload_tenant_id,
@@ -28,6 +33,9 @@ from controlplane_events.routing_consumer import (
 from controlplane_events.topics import CONTROLPLANE_EVENTS_V1
 
 __all__ = [
+    "ExperimentExposurePayload",
+    "ExperimentConversionPayload",
+    "hash_experiment_assignment",
     "AclPolicyUpdatedPayload",
     "AuthLoginSuccessPayload",
     "AuthTokenIssuedPayload",
