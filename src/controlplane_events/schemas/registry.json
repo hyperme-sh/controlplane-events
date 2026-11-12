@@ -9,14 +9,29 @@
       "schema": "accounting.committed.v1.json",
       "status": "reserved"
     },
+    "accounting.committed.v2": {
+      "owner": "controlplane-accounting",
+      "schema": "accounting.committed.v2.json",
+      "status": "reserved"
+    },
     "accounting.released.v1": {
       "owner": "controlplane-accounting",
       "schema": "accounting.released.v1.json",
       "status": "reserved"
     },
+    "accounting.released.v2": {
+      "owner": "controlplane-accounting",
+      "schema": "accounting.released.v2.json",
+      "status": "reserved"
+    },
     "accounting.reserved.v1": {
       "owner": "controlplane-accounting",
       "schema": "accounting.reserved.v1.json",
+      "status": "reserved"
+    },
+    "accounting.reserved.v2": {
+      "owner": "controlplane-accounting",
+      "schema": "accounting.reserved.v2.json",
       "status": "reserved"
     },
     "acl.policy.updated.v1": {
@@ -332,6 +347,11 @@
     "usage.recorded.v1": {
       "owner": "controlplane-accounting",
       "schema": "usage.recorded.v1.json",
+      "status": "reserved"
+    },
+    "usage.recorded.v2": {
+      "owner": "controlplane-accounting",
+      "schema": "usage.recorded.v2.json",
       "status": "reserved"
     },
     "user.created.v1": {

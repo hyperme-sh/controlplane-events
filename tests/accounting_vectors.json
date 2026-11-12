@@ -44,5 +44,51 @@
     },
     "usage_id": "usage-a",
     "meter": "inference"
+  },
+  "accounting.reserved.v2": {
+    "event_id": "e6391918-c090-5143-a768-fb008e94d53d",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 1,
+      "unit": "access"
+    },
+    "reservation_id": "reservation-a",
+    "quote_id": "quote-a"
+  },
+  "accounting.committed.v2": {
+    "event_id": "f648fcc3-6848-56f7-a5fc-13cf3e285c92",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 1,
+      "unit": "access"
+    },
+    "reservation_id": "reservation-a"
+  },
+  "accounting.released.v2": {
+    "event_id": "0d1e5625-1f7e-585e-833e-a3efded84cc0",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 0,
+      "unit": "access"
+    },
+    "reservation_id": "reservation-a"
+  },
+  "usage.recorded.v2": {
+    "event_id": "c284d494-813d-53bb-909b-a7825ea521ed",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "subject_id": "subject-a",
+    "resource": "resource-a",
+    "quantity": {
+      "amount": 1,
+      "unit": "access"
+    },
+    "usage_id": "usage-a",
+    "meter": "inference"
   }
 }

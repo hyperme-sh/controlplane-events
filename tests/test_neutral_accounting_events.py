@@ -67,7 +67,7 @@ def test_duplicate_reordering_and_older_envelope_compatibility():
     for event,payload in reversed(list(FIXTURES.items())*2):
         envelope=ControlPlaneEventEnvelope(event_type=event,service='accounting',tenant_id=uuid.UUID(payload['tenant_id']),event_id=payload['event_id'],payload=payload)
         seen.add(accounting_event_key(envelope))
-    assert len(seen)==4
+    assert len(seen)==len(ACCOUNTING_MODELS)
     old=ControlPlaneEventEnvelope(event_type='old.event.v1',service='old')
     assert 'event_id' not in old.model_dump(mode='json')
     assert ControlPlaneEventEnvelope.model_validate(dict(old.model_dump(),future_field=True)).event_id is None
@@ -87,3 +87,10 @@ def test_dispatch_refuses_mismatched_replay_identity(strict):
         with pytest.raises(ValueError,match='identity'):asyncio.run(coroutine)
     else:asyncio.run(coroutine)
     assert calls==[]
+
+
+@pytest.mark.parametrize('event',[name for name in ACCOUNTING_MODELS if name.endswith('.v1')])
+def test_access_unit_requires_v2_and_preserves_frozen_v1(event):
+    payload=dict(FIXTURES[event],quantity={'amount':1,'unit':'access'})
+    with pytest.raises((SchemaError,ModelError)):validate_event_payload(event,payload)
+    validate_event_payload(event.replace('.v1','.v2'),payload)

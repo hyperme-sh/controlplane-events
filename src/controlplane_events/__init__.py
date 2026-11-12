@@ -35,6 +35,8 @@ from controlplane_events.routing_consumer import (
 from controlplane_events.topics import CONTROLPLANE_EVENTS_V1
 
 __all__ = [
+    "AccountingQuantityV2", "AccountingReservedPayloadV2", "AccountingCommittedPayloadV2",
+    "AccountingReleasedPayloadV2", "UsageRecordedPayloadV2",
     'AccountingQuantity', 'AccountingReservedPayload', 'AccountingCommittedPayload',
     'AccountingReleasedPayload', 'UsageRecordedPayload', 'accounting_event_key',
     "ExperimentExposurePayload",
@@ -65,4 +67,9 @@ __all__ = [
 from controlplane_events.payloads.accounting_events import (
     AccountingQuantity, AccountingReservedPayload, AccountingCommittedPayload,
     AccountingReleasedPayload, UsageRecordedPayload, accounting_event_key,
+)
+
+from .payloads.accounting_events import (
+    AccountingQuantityV2, AccountingReservedPayloadV2, AccountingCommittedPayloadV2,
+    AccountingReleasedPayloadV2, UsageRecordedPayloadV2,
 )

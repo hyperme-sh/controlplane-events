@@ -61,3 +61,32 @@ def accounting_event_key(envelope):
         raise ValueError('not an accounting event')
     validate_event_envelope(envelope)
     return (str(envelope.tenant_id), envelope.payload['subject_id'], envelope.event_id)
+
+
+class AccountingQuantityV2(AccountingQuantity):
+    """Access counts add a new event version; frozen v1 units stay unchanged."""
+    unit: Literal['tokens', 'milliseconds', 'access']
+
+
+class AccountingReservedPayloadV2(AccountingReservedPayload):
+    quantity: AccountingQuantityV2
+
+
+class AccountingCommittedPayloadV2(AccountingCommittedPayload):
+    quantity: AccountingQuantityV2
+
+
+class AccountingReleasedPayloadV2(AccountingReleasedPayload):
+    quantity: AccountingQuantityV2
+
+
+class UsageRecordedPayloadV2(UsageRecordedPayload):
+    quantity: AccountingQuantityV2
+
+
+ACCOUNTING_MODELS.update({
+    'accounting.reserved.v2': AccountingReservedPayloadV2,
+    'accounting.committed.v2': AccountingCommittedPayloadV2,
+    'accounting.released.v2': AccountingReleasedPayloadV2,
+    'usage.recorded.v2': UsageRecordedPayloadV2,
+})
