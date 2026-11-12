@@ -4,6 +4,21 @@
     "payment.hypermesh.lease.outcome": "payment-service-lease-outcomes"
   },
   "events": {
+    "accounting.committed.v1": {
+      "owner": "controlplane-accounting",
+      "schema": "accounting.committed.v1.json",
+      "status": "reserved"
+    },
+    "accounting.released.v1": {
+      "owner": "controlplane-accounting",
+      "schema": "accounting.released.v1.json",
+      "status": "reserved"
+    },
+    "accounting.reserved.v1": {
+      "owner": "controlplane-accounting",
+      "schema": "accounting.reserved.v1.json",
+      "status": "reserved"
+    },
     "acl.policy.updated.v1": {
       "owner": "acl-service",
       "schema": "acl.policy.updated.v1.json",
@@ -313,6 +328,11 @@
       "owner": "tennessee-windage",
       "schema": "tw.mission.started.v1.json",
       "status": "existing"
+    },
+    "usage.recorded.v1": {
+      "owner": "controlplane-accounting",
+      "schema": "usage.recorded.v1.json",
+      "status": "reserved"
     },
     "user.created.v1": {
       "owner": "user-service",

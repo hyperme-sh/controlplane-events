@@ -1,5 +1,23 @@
 {
   "events": {
+    "accounting.committed.v1": {
+      "model": "AccountingCommittedPayload",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
+    },
+    "accounting.released.v1": {
+      "model": "AccountingReleasedPayload",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
+    },
+    "accounting.reserved.v1": {
+      "model": "AccountingReservedPayload",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
+    },
     "acl.policy.updated.v1": {
       "model": "AclPolicyUpdatedPayload",
       "module": "controlplane_events.payloads.acl_policy_updated",
@@ -338,6 +356,12 @@
       "model": null,
       "module": null,
       "owner": "turn"
+    },
+    "usage.recorded.v1": {
+      "model": "UsageRecordedPayload",
+      "module": "controlplane_events.payloads.accounting_events",
+      "owner": "controlplane-accounting",
+      "status": "reserved"
     },
     "user.created.v1": {
       "model": "UserCreatedEvent",

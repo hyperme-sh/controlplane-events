@@ -14,6 +14,8 @@ def _utc_now() -> datetime:
 class ControlPlaneEventEnvelope(BaseModel):
     """Tenant-scoped domain event wrapper (JSON on the wire)."""
 
+    event_id: str | None = Field(default=None, min_length=1, max_length=128,
+                                 exclude_if=lambda value: value is None)
     schema_version: int = Field(default=1, ge=1)
     event_type: str = Field(..., min_length=1, description="e.g. user.created.v1")
     service: str = Field(..., min_length=1, description="process name, e.g. gateway")
