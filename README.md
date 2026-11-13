@@ -273,7 +273,7 @@ Preserve schema identifiers and wire bytes when changing an event that other ser
 
 ## Release and versioning
 
-This checkout's package version is `0.1.0` (`pyproject.toml`, release line `0.1`). The accepted stable release is [`v0.24.0`](https://github.com/hyperme-sh/controlplane-events/releases/tag/v0.24.0). Main validation archives the tested wheel and sdist. Test bundles named `0.24.0-test.N` and stable `vMAJOR.MINOR.PATCH` tags are published separately from that archive. The `v0.1.0` tag is an unqualified prerelease from a failed admission. Channel rules, artifact records, and tag meanings are in [Releasing](docs/releasing.md).
+This checkout's package version is `0.1.0` (`pyproject.toml`, release line `0.1`). The accepted stable release is [`v0.24.0`](https://github.com/hyperme-sh/controlplane-events/releases/tag/v0.24.0). Main validation tests the source and discards temporary distribution files. Automatic package prereleases are not published. Stable `vMAJOR.MINOR.PATCH` tags, when used, remain a separate admission path. The `v0.1.0` tag is an unqualified prerelease from a failed admission. Channel rules, artifact records, and tag meanings are in [Releasing](docs/releasing.md).
 
 ## License
 
