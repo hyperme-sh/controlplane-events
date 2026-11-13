@@ -80,6 +80,6 @@
   "title": "LeaseOutcome",
   "type": "object",
   "x-event-type": "hypermesh.lease.outcome.v1",
-  "x-owner": "hypermesh-plane",
+  "x-owner": "hypermesh",
   "x-topic": "controlplane.events.v1"
 }
