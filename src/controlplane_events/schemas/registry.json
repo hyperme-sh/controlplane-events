@@ -250,7 +250,7 @@
       "status": "existing"
     },
     "hypermesh.lease.outcome.v1": {
-      "owner": "hypermesh-plane",
+      "owner": "hypermesh",
       "schema": "hypermesh.lease.outcome.v1.json",
       "status": "existing"
     },
@@ -360,8 +360,27 @@
       "status": "existing"
     }
   },
+  "owner_aliases": {
+    "hypermesh": [
+      "hypermesh-plane"
+    ]
+  },
   "proposed": [
     "payment.usdc.*"
   ],
+  "subscriptions": {
+    "hypermesh.payment.succeeded": {
+      "consumer": "hypermesh",
+      "event_types": [
+        "payment.succeeded.v3"
+      ]
+    },
+    "payment.hypermesh.lease.outcome": {
+      "consumer": "payment-service",
+      "event_types": [
+        "hypermesh.lease.outcome.v1"
+      ]
+    }
+  },
   "topic": "controlplane.events.v1"
 }

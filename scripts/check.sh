@@ -33,6 +33,7 @@ write_installer_input "$check_tmp"/dist/*.whl
 uv pip install --python "$check_tmp/venv/bin/python" --require-hashes -r "$check_tmp/install.txt"
 "$check_tmp/venv/bin/python" -I "$root/scripts/verify_installed_contract.py" "$check_tmp/contract/contract.json"
 cp -R tests "$check_tmp/tests"
+cp README.md "$check_tmp/README.md"
 (cd "$check_tmp" && "$check_tmp/venv/bin/python" -I -m pytest -c /dev/null tests -q --junitxml="$check_tmp/wheel.xml")
 uv run --frozen python - "$check_tmp" <<'PYTHON'
 import pathlib, sys, tarfile

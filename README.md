@@ -8,13 +8,13 @@ Control-plane services have to record the same kind of fact: a user was created,
 
 ## How it works
 
-Everything addressed to other services goes on one topic, `controlplane.events.v1` (`CONTROLPLANE_EVENTS_V1`). Callers pass that topic name into the consumer. Each log row stores `event_type`, `tenant_id`, and the envelope JSON.
+Cross-service delivery uses each owner's transactional PostgreSQL outbox, an authenticated HTTP relay and a consumer-owned inbox. `controlplane.events.v1` (`CONTROLPLANE_EVENTS_V1`) remains the envelope contract topic. The legacy shared log helpers are compatibility/receiver-side APIs, not an alternative state authority or a new producer path.
 
 `ControlPlaneEventEnvelope` is a Pydantic model. On the wire it carries `schema_version`, `event_type`, `service`, `tenant_id`, `occurred_at`, `correlation_id`, and `payload`. `tenant_id` is null for host-only or platform scope. `transport_headers()` repeats `event_type`, `service`, `schema_version`, and either `tenant_id` or `context=host`, plus `correlation_id` when set. `bus_event_id` is the `controlplane_events.id` of a delivery. The poller sets it. It is excluded from the JSON stored in the row.
 
 Schemas live in `src/controlplane_events/schemas/`. `registry.json` names every event type, its owning service, its schema file, and `existing` or `reserved` status. `controlplane_events.contracts` loads those files from the installed package. `validate_event_payload` checks the payload with JSON Schema draft 2020-12 and format assertions. `validate_event_envelope` also requires the shared topic and, when the payload carries `tenant_id`, requires that value to match the envelope. Unknown event types raise `KeyError`. A subset of event types also has a Pydantic payload model under `controlplane_events.payloads` for constructing and parsing those payloads in process.
 
-`PostgresEventPublisher` inserts one `controlplane_events` row per `publish()`. It refuses payloads that contain `prompt`, `messages`, `device_secret`, or `enroll_token`. `publish_in_session` and `bind_outbox_session` insert on the caller's transaction and leave the commit to that caller, so a rollback drops the event. A publish with no bound session opens its own transaction on an async SQLAlchemy engine.
+The legacy `PostgresEventPublisher` inserts one `controlplane_events` row per `publish()`. It refuses payloads that contain `prompt`, `messages`, `device_secret`, or `enroll_token`. `publish_in_session` and `bind_outbox_session` insert on the caller's transaction and leave the commit to that caller, so a rollback drops the event. A publish with no bound session opens its own transaction on an async SQLAlchemy engine.
 
 `RoutingControlPlaneConsumer` registers a consumer group for its event types, polls `controlplane_event_deliveries`, and wakes on PostgreSQL notifications on the `controlplane_events` channel. Registration with `auto_offset_reset="earliest"` backfills committed rows. A group filter such as `source_service` stays fixed for that group id; a different filter uses a new group id. The consumer claims a row, parses the envelope, validates the payload with the route's Pydantic model, checks that the envelope tenant and the payload tenant agree, and runs the handler. A payload that fails validation, or whose tenant disagrees with the envelope, is logged and skipped, and that delivery is acknowledged. A handler that raises is recorded as a failed attempt, delayed with backoff, and marked `dead` once `attempts` reaches `max_attempts`. `reset_cursor` replays deliveries after a given event id.
 
@@ -162,25 +162,94 @@ pending_or_claimed, dead = delivery_counts_sync(connection)
 
 ## How Hypermesh uses it
 
-Hypermesh is the owning service recorded for the lease, device, certification, instance-check, and payout event types. Those producers publish onto `controlplane.events.v1`. Other control-plane services publish their own types onto the same log; Hypermesh and payment-service consume two of those streams through registered groups.
+The registry is authoritative for every event, status, owner and subscription.
+Plane uses the canonical owner `hypermesh`; `hypermesh-plane` remains an explicit
+producer alias for independently updated peers. Wire claims and strict payload
+schemas are unchanged. Payment-success currently uses v3; v4 is reserved.
+Payout facts travel in `hypermesh.lease.outcome.v1`; there is no separate
+payout-due subscription. Owner reads and local transactions decide payment and
+lease state; events only wake reconciliation.
 
-| Event type | Registry status | Role on the lease / host / renter path |
-| --- | --- | --- |
-| `hypermesh.lease.started.v1` | existing | Lease became active. Payload carries lease, tenant, renter user, host org, device, class, catalog, billing record, contract, reserved hours, gross cents, ticket purpose (`renter`, `ir`, or `service`), and kind (`p1_hardware` or `p2_loaded_model`). |
-| `hypermesh.lease.ended.v1` | existing | Lease ended. Same lease identity and commercial fields. |
-| `hypermesh.lease.failed.v1` | existing | Lease failed before or during the rental. |
-| `hypermesh.device.enrolled.v1` | existing | A host, gateway, or plane device was enrolled. Spanopticon pins the plane role when the device token is minted. |
-| `hypermesh.device.deenrolled.v1` | existing | That device left the control plane. |
-| `hypermesh.cert.path_b.passed.v1` | existing | A certification job passed: compact certification, a lab image pull, an instance check, lease start or stop, or a sell-pause. Payload includes job, device, tenant, image hash, and host sell state. |
-| `hypermesh.cert.path_b.failed.v1` | existing | The same certification job failed. |
-| `hypermesh.instance.check.failed.v1` | existing | An instance check on a device failed. |
-| `hypermesh.payout.due.v1` | existing | A host payout is due for a lease: host org, host public key, gross cents, and net cents. |
-| `allocation.requested.v1`, `allocation.ended.v1`, `host.enrolled.v1` | reserved | Schemas are registered for placement and host enrollment. `reserved` means the contract is on file ahead of a live producer. |
+<!-- event-registry:start -->
+| Event type | Owner | Status | Schema |
+| --- | --- | --- | --- |
+| `accounting.committed.v1` | `controlplane-accounting` | reserved | `accounting.committed.v1.json` |
+| `accounting.committed.v2` | `controlplane-accounting` | reserved | `accounting.committed.v2.json` |
+| `accounting.released.v1` | `controlplane-accounting` | reserved | `accounting.released.v1.json` |
+| `accounting.released.v2` | `controlplane-accounting` | reserved | `accounting.released.v2.json` |
+| `accounting.reserved.v1` | `controlplane-accounting` | reserved | `accounting.reserved.v1.json` |
+| `accounting.reserved.v2` | `controlplane-accounting` | reserved | `accounting.reserved.v2.json` |
+| `acl.policy.updated.v1` | `acl-service` | existing | `acl.policy.updated.v1.json` |
+| `aiuditor.admission.resolved.v1` | `aiuditor` | existing | `aiuditor.admission.resolved.v1.json` |
+| `aiuditor.admission.submitted.v1` | `aiuditor` | existing | `aiuditor.admission.submitted.v1.json` |
+| `aiuditor.approval.held.v1` | `aiuditor` | existing | `aiuditor.approval.held.v1.json` |
+| `aiuditor.approval.resolved.v1` | `aiuditor` | existing | `aiuditor.approval.resolved.v1.json` |
+| `aiuditor.catalog.service.allocated.v1` | `aiuditor` | existing | `aiuditor.catalog.service.allocated.v1.json` |
+| `aiuditor.catalog.service.created.v1` | `aiuditor` | existing | `aiuditor.catalog.service.created.v1.json` |
+| `aiuditor.connection.assigned.v1` | `aiuditor` | existing | `aiuditor.connection.assigned.v1.json` |
+| `aiuditor.connection.created.v1` | `aiuditor` | existing | `aiuditor.connection.created.v1.json` |
+| `aiuditor.contract.bound.v1` | `aiuditor` | existing | `aiuditor.contract.bound.v1.json` |
+| `aiuditor.contract.bound.v2` | `aiuditor` | existing | `aiuditor.contract.bound.v2.json` |
+| `aiuditor.contract.created.v1` | `aiuditor` | existing | `aiuditor.contract.created.v1.json` |
+| `aiuditor.contract.created.v2` | `aiuditor` | existing | `aiuditor.contract.created.v2.json` |
+| `aiuditor.contract.fulfilled.v1` | `aiuditor` | existing | `aiuditor.contract.fulfilled.v1.json` |
+| `aiuditor.contract.fulfilled.v2` | `aiuditor` | existing | `aiuditor.contract.fulfilled.v2.json` |
+| `aiuditor.contract.signed.v1` | `aiuditor` | existing | `aiuditor.contract.signed.v1.json` |
+| `aiuditor.contract.signed.v2` | `aiuditor` | existing | `aiuditor.contract.signed.v2.json` |
+| `aiuditor.contract.violated.v1` | `aiuditor` | existing | `aiuditor.contract.violated.v1.json` |
+| `aiuditor.envelope.recorded.v1` | `aiuditor` | existing | `aiuditor.envelope.recorded.v1.json` |
+| `aiuditor.policy.created.v1` | `aiuditor` | existing | `aiuditor.policy.created.v1.json` |
+| `aiuditor.policy.deleted.v1` | `aiuditor` | existing | `aiuditor.policy.deleted.v1.json` |
+| `aiuditor.suite.member.recorded.v1` | `aiuditor` | existing | `aiuditor.suite.member.recorded.v1.json` |
+| `allocation.ended.v1` | `hypermesh` | reserved | `allocation.ended.v1.json` |
+| `allocation.requested.v1` | `hypermesh` | reserved | `allocation.requested.v1.json` |
+| `auth.login.success.v1` | `auth-service` | existing | `auth.login.success.v1.json` |
+| `auth.token.issued.v1` | `auth-service` | existing | `auth.token.issued.v1.json` |
+| `billing.record.created.v2` | `payment-service` | existing | `billing.record.created.v2.json` |
+| `budget.allocated.v1` | `payment-service` | existing | `budget.allocated.v1.json` |
+| `budget.depleted.v1` | `ai-service` | existing | `budget.depleted.v1.json` |
+| `experiment.conversion.v1` | `controlplane-events` | reserved | `experiment.conversion.v1.json` |
+| `experiment.conversion.v2` | `controlplane-events` | reserved | `experiment.conversion.v2.json` |
+| `experiment.exposure.v1` | `controlplane-events` | reserved | `experiment.exposure.v1.json` |
+| `gateway_api_access_v1` | `controlplane-edge` | existing | `gateway_api_access_v1.json` |
+| `group.member.added.v1` | `user-service` | existing | `group.member.added.v1.json` |
+| `group.member.removed.v1` | `user-service` | existing | `group.member.removed.v1.json` |
+| `host.enrolled.v1` | `hypermesh` | reserved | `host.enrolled.v1.json` |
+| `hypermesh.cert.path_b.failed.v1` | `hypermesh` | existing | `hypermesh.cert.path_b.failed.v1.json` |
+| `hypermesh.cert.path_b.passed.v1` | `hypermesh` | existing | `hypermesh.cert.path_b.passed.v1.json` |
+| `hypermesh.device.deenrolled.v1` | `hypermesh` | existing | `hypermesh.device.deenrolled.v1.json` |
+| `hypermesh.device.enrolled.v1` | `hypermesh` | existing | `hypermesh.device.enrolled.v1.json` |
+| `hypermesh.instance.check.failed.v1` | `hypermesh` | existing | `hypermesh.instance.check.failed.v1.json` |
+| `hypermesh.lease.ended.v1` | `hypermesh` | existing | `hypermesh.lease.ended.v1.json` |
+| `hypermesh.lease.failed.v1` | `hypermesh` | existing | `hypermesh.lease.failed.v1.json` |
+| `hypermesh.lease.outcome.v1` | `hypermesh` | existing | `hypermesh.lease.outcome.v1.json` |
+| `hypermesh.lease.started.v1` | `hypermesh` | existing | `hypermesh.lease.started.v1.json` |
+| `listing.created.v1` | `marketplace-service` | existing | `listing.created.v1.json` |
+| `payment.connect.access.changed.v1` | `payment-service` | existing | `payment.connect.access.changed.v1.json` |
+| `payment.obligation.recorded.v1` | `payment-service` | existing | `payment.obligation.recorded.v1.json` |
+| `payment.succeeded.v3` | `payment-service` | existing | `payment.succeeded.v3.json` |
+| `payment.succeeded.v4` | `payment-service` | reserved | `payment.succeeded.v4.json` |
+| `purchase.completed.v1` | `marketplace-service` | existing | `purchase.completed.v1.json` |
+| `sociacl.access.decided.v1` | `acl-service` | existing | `sociacl.access.decided.v1.json` |
+| `sociacl.recovery.session.started.v1` | `acl-service` | existing | `sociacl.recovery.session.started.v1.json` |
+| `sociacl.share.created.v1` | `acl-service` | existing | `sociacl.share.created.v1.json` |
+| `sociacl.share.resolved.v1` | `acl-service` | existing | `sociacl.share.resolved.v1.json` |
+| `template.sample.created.v1` | `template` | existing | `template.sample.created.v1.json` |
+| `tenant.created.v1` | `platform` | existing | `tenant.created.v1.json` |
+| `tokens.used.v1` | `ai-service` | existing | `tokens.used.v1.json` |
+| `turn.allocate.v1` | `turn` | existing | `turn.allocate.v1.json` |
+| `tw.iff.friend_hit.v1` | `tennessee-windage` | existing | `tw.iff.friend_hit.v1.json` |
+| `tw.iff.identity.assigned.v1` | `tennessee-windage` | existing | `tw.iff.identity.assigned.v1.json` |
+| `tw.mission.started.v1` | `tennessee-windage` | existing | `tw.mission.started.v1.json` |
+| `usage.recorded.v1` | `controlplane-accounting` | reserved | `usage.recorded.v1.json` |
+| `usage.recorded.v2` | `controlplane-accounting` | reserved | `usage.recorded.v2.json` |
+| `user.created.v1` | `user-service` | existing | `user.created.v1.json` |
 
-Registered consumer groups in `registry.json`:
-
-- `hypermesh-service-controlplane-events` is the Hypermesh group recorded under `hypermesh.payment.succeeded`. Payment-service publishes `payment.succeeded.v1` when a renter payment lands. The payload carries the billing record, the tenant, and Stripe identifiers.
-- `payment-service-controlplane-events` is the payment-service group recorded under `payment.hypermesh.payout.due`. That group reads `hypermesh.payout.due.v1` so payment-service can pay the host for the lease.
+| Subscription | Consumer | Group | Event types |
+| --- | --- | --- | --- |
+| `hypermesh.payment.succeeded` | `hypermesh` | `hypermesh-service-controlplane-events` | `payment.succeeded.v3` |
+| `payment.hypermesh.lease.outcome` | `payment-service` | `payment-service-lease-outcomes` | `hypermesh.lease.outcome.v1` |
+<!-- event-registry:end -->
 
 ## Develop and test
 

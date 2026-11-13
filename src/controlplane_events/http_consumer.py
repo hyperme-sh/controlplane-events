@@ -17,9 +17,12 @@ from controlplane_events.store import normalize_async_url
 
 def producer_owns_event(service, event_type):
     """The authenticated producer may submit only events registered to that owner."""
-    entry = event_contracts()['events'].get(event_type)
+    registry = event_contracts()
+    entry = registry['events'].get(event_type)
     owner = entry.get('owner') if isinstance(entry, dict) else None
-    return isinstance(service, str) and bool(service) and owner == service
+    return isinstance(service, str) and bool(service) and (
+        owner == service or service in registry.get("owner_aliases", {}).get(owner, [])
+    )
 
 
 class HttpRoutingConsumer:
