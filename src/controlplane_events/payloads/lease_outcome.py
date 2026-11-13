@@ -17,7 +17,7 @@ class LeaseOutcome(BaseModel):
     lease_id: _WireUUID
     billing_record_id: _WireUUID
     host_org_id: _WireUUID
-    host_wallet: str = Field(min_length=1)
+    host_wallet: str | None = Field(default=None, min_length=1)
     kind: Literal["p1_hardware", "p2_loaded_model"]
     outcome: Literal["started", "ended", "failed"]
     certification: Literal["passed", "failed", "unavailable"]

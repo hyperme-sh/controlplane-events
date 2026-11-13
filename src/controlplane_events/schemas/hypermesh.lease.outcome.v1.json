@@ -28,9 +28,17 @@
       "type": "string"
     },
     "host_wallet": {
-      "minLength": 1,
-      "title": "Host Wallet",
-      "type": "string"
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Host Wallet"
     },
     "kind": {
       "enum": [
@@ -70,7 +78,6 @@
     "lease_id",
     "billing_record_id",
     "host_org_id",
-    "host_wallet",
     "kind",
     "outcome",
     "certification",
