@@ -60,3 +60,19 @@ def test_decoded_wire_payload_dispatches_and_keeps_cents_strict():
         envelope_to_bytes(rejected.model_dump(mode="json")),
         {LEASE_OUTCOME_V1: (LeaseOutcome, handler)}))
     assert received == [(7, fact)]
+
+
+def test_usd_outcome_accepts_no_wallet():
+    fact = outcome().model_copy(update={'host_wallet': None})
+    parsed = LeaseOutcome.model_validate_json(fact.model_dump_json())
+    assert parsed.host_wallet is None
+    validate_event_envelope(ControlPlaneEventEnvelope(event_type=LEASE_OUTCOME_V1,
+        service='hypermesh-plane', tenant_id=fact.tenant_id, payload=fact.model_dump(mode='json')))
+
+
+def test_usd_obligation_requires_cents_and_rail():
+    payload = {key: str(uuid.uuid4()) for key in ('tenant_id','lease_id','billing_record_id','source_event_id')}
+    validate_event_payload('payment.obligation.recorded.v1', payload | {'net_usdc_atoms': 10000})
+    validate_event_payload('payment.obligation.recorded.v1', payload | {'net_usdc_atoms': None, 'net_cents': 1, 'payout_rail':'usd'})
+    with pytest.raises(ValidationError):
+        validate_event_payload('payment.obligation.recorded.v1', payload | {'net_usdc_atoms': None})

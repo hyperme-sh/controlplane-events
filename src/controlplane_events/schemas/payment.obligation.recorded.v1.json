@@ -13,7 +13,10 @@
     },
     "net_usdc_atoms": {
       "minimum": 0,
-      "type": "integer"
+      "type": [
+        "integer",
+        "null"
+      ]
     },
     "source_event_id": {
       "format": "uuid",
@@ -22,6 +25,16 @@
     "tenant_id": {
       "format": "uuid",
       "type": "string"
+    },
+    "net_cents": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "payout_rail": {
+      "enum": [
+        "usd",
+        "usdc"
+      ]
     }
   },
   "required": [
@@ -34,5 +47,30 @@
   "type": "object",
   "x-event-type": "payment.obligation.recorded.v1",
   "x-owner": "payment-service",
-  "x-topic": "controlplane.events.v1"
+  "x-topic": "controlplane.events.v1",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "net_usdc_atoms": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "net_usdc_atoms"
+        ]
+      },
+      "then": {
+        "required": [
+          "net_cents",
+          "payout_rail"
+        ],
+        "properties": {
+          "payout_rail": {
+            "const": "usd"
+          }
+        }
+      }
+    }
+  ]
 }
