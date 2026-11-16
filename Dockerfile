@@ -5,18 +5,24 @@ RUN python -m venv /app/.venv
 COPY requirements.txt /opt/requirements.txt
 RUN --mount=type=bind,source=wheels,target=/wheels,ro \
     /app/.venv/bin/python -m pip install --no-cache-dir --no-deps --require-hashes -r /opt/requirements.txt
+COPY licenses/ /opt/license-supplements/
+COPY prepare_notices.py /opt/prepare_notices.py
+RUN /app/.venv/bin/python -I /opt/prepare_notices.py /opt/notices /opt/license-supplements
 COPY owner-migrations /opt/events-owner/owner-migrations
 RUN /app/.venv/bin/python -c "import pathlib,shutil; p=pathlib.Path('/opt/events-owner/owner-migrations'); target=pathlib.Path('/app/.venv/lib/python3.13/site-packages/controlplane_events'); shutil.copy2(p/'migrate.py',target/'migrate.py'); shutil.copytree(p/'migrations',target/'migrations',dirs_exist_ok=True)"
 RUN --network=none /app/.venv/bin/python -c "import controlplane_events.http_inbox"
 FROM python:3.13-slim-bookworm@sha256:281d39ff02e3b389401586134ff9e6572954687822a58055ec07a60ded4e0b7f
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /opt/notices /usr/share/doc/controlplane-events/third-party
+COPY LICENSE NOTICE /usr/share/doc/controlplane-events/
 COPY owner-migrations /opt/events-owner/owner-migrations
 COPY selfhost/entrypoint.py /opt/events-owner/entrypoint.py
 COPY runtime-receipt.json /opt/events-owner/runtime-receipt.json
 ARG SOURCE_SHA
 ARG BUILT_AT
-LABEL org.opencontainers.image.source="https://github.com/hyperme-sh/controlplane-events" \
+LABEL org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.source="https://github.com/hyperme-sh/controlplane-events" \
       org.opencontainers.image.revision="${SOURCE_SHA}"
 ENV GIT_SHA=${SOURCE_SHA} EVENTS_SOURCE_SHA=${SOURCE_SHA} BUILT_AT=${BUILT_AT} PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 USER 65532:65532

@@ -380,6 +380,10 @@ remain in job logs.
 
 Distribution preparation follows FyberLabs/infra#993: GHCR containers, moving
 TEST channels and nightly integration/e2e. Owner/dependency notices, history
-review and GHCR image preparation remain follow-ups. No third-party source
+checks and GHCR image preparation run in CI. Retained-image review and GHCR
+activation remain follow-ups. No third-party source
 archives are bundled for redistribution. Event contracts, wire bytes, versions
 and dependency locks are unchanged.
+
+The [publication record](docs/publication/README.md) describes owner/dependency
+notices, reachable-history scanning and the prepared GHCR owner image.

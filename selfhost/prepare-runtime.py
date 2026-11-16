@@ -28,6 +28,10 @@ def main():
         raise ValueError('Runtime dependencies must use public hash-locked registry distributions')
     out.mkdir(parents=True);(out/'wheels').mkdir()
     shutil.copy2(wheel,out/'wheels'/wheel.name)
+    for name in ('LICENSE', 'NOTICE'):
+        shutil.copy2(root/name, out/name)
+    shutil.copytree(root/'.github/workflows/third-party-notices', out/'licenses')
+    shutil.copy2(root/'scripts/prepare_notices.py', out/'prepare_notices.py')
     requirements+='\n/wheels/'+wheel.name+' --hash=sha256:'+sha(wheel)+'\n'
     (out/'requirements.txt').write_text(requirements)
     resources={'selfhost/entrypoint.py':'selfhost/entrypoint.py',
