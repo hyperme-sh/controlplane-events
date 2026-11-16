@@ -1,0 +1,97 @@
+name: GHCR TEST publication
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ghcr-events-runtime-test
+  cancel-in-progress: false
+jobs:
+  package:
+    if: github.repository == 'hyperme-sh/controlplane-events' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "debrunner"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 30
+    steps:
+      - name: Prepare build-local package output
+        run: echo "RELEASE_ARTIFACT_DIR=$(mktemp -d "$RUNNER_TEMP/events-dist.XXXXXX")" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          enable-cache: false
+          version: '0.11.26'
+          python-version: '3.13'
+      - name: Qualify public dependencies without inherited credentials
+        run: >-
+          bash scripts/anonymous-command.sh env
+          RELEASE_ARTIFACT_DIR="$RELEASE_ARTIFACT_DIR" bash scripts/check.sh
+      - name: Build and qualify exact owner image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="ghcr.io/hyperme-sh/controlplane-events/runtime:preparation-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          python3 selfhost/prepare-runtime.py --wheel "$RELEASE_ARTIFACT_DIR/controlplane_events-0.1.0-py3-none-any.whl" --output "$RELEASE_ARTIFACT_DIR/context"
+          docker build -f Dockerfile --build-arg SOURCE_SHA="$GITHUB_SHA" -t "$image" "$RELEASE_ARTIFACT_DIR/context"
+          python3 - "$image" "$RELEASE_ARTIFACT_DIR/image.json" <<'PYTHON'
+          import json, subprocess, sys
+          image_id = subprocess.check_output(['docker', 'image', 'inspect', '--format', '{{.Id}}', sys.argv[1]], text=True).strip()
+          with open(sys.argv[2], 'w') as stream:
+              json.dump({'image': sys.argv[1], 'image_id': image_id}, stream)
+          PYTHON
+          python3 selfhost/qualify-runtime.py "$image" --wheel "$RELEASE_ARTIFACT_DIR/controlplane_events-0.1.0-py3-none-any.whl"
+          bash scripts/check-container.sh "$image"
+      - name: Publish qualified current main to moving TEST
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current=$(python3 - <<'PYTHON'
+          import json, os, urllib.request
+          class NoRedirects(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs):
+                  raise ValueError('Authenticated main-ref redirects are refused')
+          request = urllib.request.Request('https://api.github.com/repos/hyperme-sh/controlplane-events/git/ref/heads/main',
+              headers={'Authorization': 'Bearer ' + os.environ['GHCR_TOKEN'], 'Accept': 'application/vnd.github+json'})
+          with urllib.request.build_opener(NoRedirects()).open(request, timeout=30) as response:
+              print(json.load(response)['object']['sha'])
+          PYTHON
+          )
+          if [[ "$current" != "$GITHUB_SHA" ]]; then
+            echo 'Newer main exists; skip stale TEST publication'
+            exit 0
+          fi
+          export DOCKER_CONFIG="$RELEASE_ARTIFACT_DIR/docker-auth"
+          mkdir -m 700 "$DOCKER_CONFIG"
+          trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          unset GHCR_TOKEN
+          image_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["image_id"])' "$RELEASE_ARTIFACT_DIR/image.json")
+          python3 scripts/publish_container.py --revision "$GITHUB_SHA" --image-id "$image_id" --channel test --publish
+      - name: Review retained registry versions after publication
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REQUIRE_REGISTRY_INVENTORY=1 python3 scripts/inventory_registry.py "$RELEASE_ARTIFACT_DIR/registry-output"
+          python3 -c 'import json,sys; rows=dict(line.rstrip().split("=",1) for line in open(sys.argv[1])); print("\n".join(r["digest"] for r in json.loads(rows["matrix"])["include"]))' "$RELEASE_ARTIFACT_DIR/registry-output" > "$RELEASE_ARTIFACT_DIR/digests"
+          while IFS= read -r digest; do
+            [[ -z "$digest" ]] || HISTORICAL_REPOSITORY=hyperme-sh/controlplane-events/runtime bash scripts/check-older-image.sh "$digest"
+          done < "$RELEASE_ARTIFACT_DIR/digests"
+      - name: Remove qualified local image
+        if: always()
+        run: |
+          if [[ -f "$RELEASE_ARTIFACT_DIR/image.json" ]]; then
+            image=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["image"])' "$RELEASE_ARTIFACT_DIR/image.json")
+            docker image rm "$image" || true
+          fi
+      - name: Remove build-local package output
+        if: always()
+        run: rm -rf -- "$RELEASE_ARTIFACT_DIR"
