@@ -1,0 +1,54 @@
+{
+  "$id": "urn:controlplane:event:plane.lease.usage.recorded.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "batch_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "lease_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "meter": {
+      "enum": [
+        "wall_time",
+        "capacity_block",
+        "token_digest_count",
+        "prompt_digest_count"
+      ],
+      "type": "string"
+    },
+    "quantity": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "reading_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "lease_id",
+    "reading_id",
+    "meter",
+    "quantity",
+    "batch_id",
+    "created_at"
+  ],
+  "type": "object",
+  "x-event-type": "plane.lease.usage.recorded.v1",
+  "x-owner": "hypermesh-plane",
+  "x-topic": "controlplane.events.v1"
+}

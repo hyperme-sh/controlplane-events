@@ -284,6 +284,11 @@
       "schema": "payment.succeeded.v4.json",
       "status": "reserved"
     },
+    "plane.lease.usage.recorded.v1": {
+      "owner": "hypermesh-plane",
+      "schema": "plane.lease.usage.recorded.v1.json",
+      "status": "reserved"
+    },
     "purchase.completed.v1": {
       "owner": "marketplace-service",
       "schema": "purchase.completed.v1.json",
