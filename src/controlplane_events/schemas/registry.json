@@ -289,6 +289,11 @@
       "schema": "plane.lease.usage.recorded.v1.json",
       "status": "reserved"
     },
+    "plane.peer.handshaken.v1": {
+      "owner": "hypermesh",
+      "schema": "plane.peer.handshaken.v1.json",
+      "status": "reserved"
+    },
     "purchase.completed.v1": {
       "owner": "marketplace-service",
       "schema": "purchase.completed.v1.json",
