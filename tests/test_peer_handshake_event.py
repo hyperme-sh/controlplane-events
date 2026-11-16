@@ -20,6 +20,6 @@ def test_owner_and_tenant():
     with pytest.raises(ValueError): validate_event_envelope(envelope)
 
 @pytest.mark.parametrize('change',[{'prompt':'private'},{'peer_pin':'bad'},{'outcome':'unbounded error'},
-    {'capabilities':['x']*33},{'capabilities':['bad space']},{'capabilities':['x','x']},{'tenant_id':'bad'}])
+    {'capabilities':['x']*33},{'capabilities':['bad space']},{'capabilities':['x','x']},{'tenant_id':'bad'}, {'observed_at':'private text'}, {'observed_at':'x'*200000}, {'observed_at':'2026-02-30T00:00:00Z'}])
 def test_strict_fields(change):
     with pytest.raises(ValidationError): validate_event_payload(EVENT,payload()|change)

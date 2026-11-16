@@ -33,6 +33,15 @@ def _validator(event_type: str) -> Draft202012Validator:
 def validate_event_payload(event_type: str, payload: dict[str, Any]) -> None:
     """Validate JSON wire values with format checking, without coercing or importing owners."""
     _validator(event_type).validate(payload)
+    if event_type == "plane.peer.handshaken.v1":
+        from datetime import datetime
+        from jsonschema import ValidationError
+        try:
+            parsed = datetime.fromisoformat(payload["observed_at"].replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                raise ValueError()
+        except ValueError:
+            raise ValidationError("Invalid peer observation timestamp") from None
     from controlplane_events.payloads.accounting_events import ACCOUNTING_MODELS
     if event_type in ACCOUNTING_MODELS:
         ACCOUNTING_MODELS[event_type].model_validate(payload)
