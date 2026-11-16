@@ -15,6 +15,7 @@ def payload():
 def test_count_notification_owner_and_shape():
     validate_event_payload(EVENT,payload())
     assert producer_owns_event('hypermesh-plane',EVENT)
+    assert producer_owns_event('hypermesh',EVENT)
     assert not producer_owns_event('payment-service',EVENT)
 
 

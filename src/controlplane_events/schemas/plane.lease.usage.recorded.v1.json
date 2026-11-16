@@ -49,6 +49,6 @@
   ],
   "type": "object",
   "x-event-type": "plane.lease.usage.recorded.v1",
-  "x-owner": "hypermesh-plane",
+  "x-owner": "hypermesh",
   "x-topic": "controlplane.events.v1"
 }

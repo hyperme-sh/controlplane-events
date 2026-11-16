@@ -285,7 +285,7 @@
       "status": "reserved"
     },
     "plane.lease.usage.recorded.v1": {
-      "owner": "hypermesh-plane",
+      "owner": "hypermesh",
       "schema": "plane.lease.usage.recorded.v1.json",
       "status": "reserved"
     },

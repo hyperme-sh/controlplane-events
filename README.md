@@ -230,7 +230,7 @@ lease state; events only wake reconciliation.
 | `payment.obligation.recorded.v1` | `payment-service` | existing | `payment.obligation.recorded.v1.json` |
 | `payment.succeeded.v3` | `payment-service` | existing | `payment.succeeded.v3.json` |
 | `payment.succeeded.v4` | `payment-service` | reserved | `payment.succeeded.v4.json` |
-| `plane.lease.usage.recorded.v1` | `hypermesh-plane` | reserved | `plane.lease.usage.recorded.v1.json` |
+| `plane.lease.usage.recorded.v1` | `hypermesh` | reserved | `plane.lease.usage.recorded.v1.json` |
 | `purchase.completed.v1` | `marketplace-service` | existing | `purchase.completed.v1.json` |
 | `sociacl.access.decided.v1` | `acl-service` | existing | `sociacl.access.decided.v1.json` |
 | `sociacl.recovery.session.started.v1` | `acl-service` | existing | `sociacl.recovery.session.started.v1.json` |
