@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "publication_cleared": false,
+  "findings": [
+    {
+      "object": "717cf80ea55f06614e07c663589376c41b287cbd",
+      "path": "src/controlplane_events/payloads/payment_events.py",
+      "blob_sha256": "0de016cae2f319c2145b1097110b62418a00b1d73fc4cb3b8c1c8a7a06d4ade7",
+      "content_sha256": "0de016cae2f319c2145b1097110b62418a00b1d73fc4cb3b8c1c8a7a06d4ade7",
+      "classification": "retained-payment-schema",
+      "disposition": "retained-not-cleared-for-publication",
+      "reason": "Historical payment contract with provider-specific fields; no provider implementation or credentials. Preserve existing history; do not republish historical bytes as the current image."
+    },
+    {
+      "object": "325d8e9cda760a37d8e01e351e7e9b12b8e2ab0f",
+      "path": "src/controlplane_events/schemas/hypermesh.payout.due.v1.json",
+      "blob_sha256": "2d8313d6687237e3c3ae2288e6df874d1b133a6898d7e439d1b3ad9d8873c82c",
+      "content_sha256": "2d8313d6687237e3c3ae2288e6df874d1b133a6898d7e439d1b3ad9d8873c82c",
+      "classification": "retained-payment-schema",
+      "disposition": "retained-not-cleared-for-publication",
+      "reason": "Historical payment contract with provider-specific fields; no provider implementation or credentials. Preserve existing history; do not republish historical bytes as the current image."
+    },
+    {
+      "object": "a6346f1d410ec7d8c8ba0f3ce8510ce89b3965e1",
+      "path": "src/controlplane_events/schemas/payment.succeeded.v1.json",
+      "blob_sha256": "9dc8278a3e446bca7c220fe3b813e0b2934f8325dfe1994b1d2d535537af077f",
+      "content_sha256": "9dc8278a3e446bca7c220fe3b813e0b2934f8325dfe1994b1d2d535537af077f",
+      "classification": "retained-payment-schema",
+      "disposition": "retained-not-cleared-for-publication",
+      "reason": "Historical payment contract with provider-specific fields; no provider implementation or credentials. Preserve existing history; do not republish historical bytes as the current image."
+    },
+    {
+      "object": "ede91ac40344ac091e95e8db3126d1d073990744",
+      "path": "src/controlplane_events/schemas/payment.succeeded.v2.json",
+      "blob_sha256": "6a33ee1158727c69f8a9f129cf8c8baaca612c725417fbd11b2442f47f19350d",
+      "content_sha256": "6a33ee1158727c69f8a9f129cf8c8baaca612c725417fbd11b2442f47f19350d",
+      "classification": "retained-payment-schema",
+      "disposition": "retained-not-cleared-for-publication",
+      "reason": "Historical payment contract with provider-specific fields; no provider implementation or credentials. Preserve existing history; do not republish historical bytes as the current image."
+    }
+  ]
+}
