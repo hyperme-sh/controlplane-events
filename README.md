@@ -171,6 +171,7 @@ payout-due subscription. Owner reads and local transactions decide payment and
 lease state; events only wake reconciliation.
 
 <!-- event-registry:start -->
+
 | Event type | Owner | Status | Schema |
 | --- | --- | --- | --- |
 | `accounting.committed.v1` | `controlplane-accounting` | reserved | `accounting.committed.v1.json` |
@@ -229,6 +230,7 @@ lease state; events only wake reconciliation.
 | `payment.obligation.recorded.v1` | `payment-service` | existing | `payment.obligation.recorded.v1.json` |
 | `payment.succeeded.v3` | `payment-service` | existing | `payment.succeeded.v3.json` |
 | `payment.succeeded.v4` | `payment-service` | reserved | `payment.succeeded.v4.json` |
+| `plane.lease.usage.recorded.v1` | `hypermesh` | reserved | `plane.lease.usage.recorded.v1.json` |
 | `purchase.completed.v1` | `marketplace-service` | existing | `purchase.completed.v1.json` |
 | `sociacl.access.decided.v1` | `acl-service` | existing | `sociacl.access.decided.v1.json` |
 | `sociacl.recovery.session.started.v1` | `acl-service` | existing | `sociacl.recovery.session.started.v1.json` |
@@ -249,6 +251,7 @@ lease state; events only wake reconciliation.
 | --- | --- | --- | --- |
 | `hypermesh.payment.succeeded` | `hypermesh` | `hypermesh-service-controlplane-events` | `payment.succeeded.v3` |
 | `payment.hypermesh.lease.outcome` | `payment-service` | `payment-service-lease-outcomes` | `hypermesh.lease.outcome.v1` |
+
 <!-- event-registry:end -->
 
 ## Develop and test
