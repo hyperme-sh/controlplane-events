@@ -1,0 +1,252 @@
+[
+  {
+    "file": "9974a3102f2f988d6a8808d8c745773a8567d585.txt",
+    "sha256": "705c78b9f0f6d5358cd11a02a358a8d6f53c8ee331c5d046d1bb4d083a47163b",
+    "rule": "generic-api-key",
+    "start": 11,
+    "end": 11,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/auth_events.py",
+    "source_blob": "468082acb9fd62a0f7b48668a5dea8d4880916ba"
+  },
+  {
+    "file": "9974a3102f2f988d6a8808d8c745773a8567d585.txt",
+    "sha256": "705c78b9f0f6d5358cd11a02a358a8d6f53c8ee331c5d046d1bb4d083a47163b",
+    "rule": "generic-api-key",
+    "start": 19,
+    "end": 19,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/tokens_used.py",
+    "source_blob": "94decf475180f54c243e92f97f5e15fe442d35aa"
+  },
+  {
+    "file": "9974a3102f2f988d6a8808d8c745773a8567d585.txt",
+    "sha256": "705c78b9f0f6d5358cd11a02a358a8d6f53c8ee331c5d046d1bb4d083a47163b",
+    "rule": "generic-api-key",
+    "start": 44,
+    "end": 44,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/auth.token.issued.v1.json",
+    "source_blob": "ff0ddc833bcebe5ef64b9350d45653dd34916051"
+  },
+  {
+    "file": "9974a3102f2f988d6a8808d8c745773a8567d585.txt",
+    "sha256": "705c78b9f0f6d5358cd11a02a358a8d6f53c8ee331c5d046d1bb4d083a47163b",
+    "rule": "generic-api-key",
+    "start": 61,
+    "end": 61,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/payment.connect.access.changed.v1.json",
+    "source_blob": "1cdc87d54084ecb47aa7e5ab9f220e1bde1e8e7e"
+  },
+  {
+    "file": "9974a3102f2f988d6a8808d8c745773a8567d585.txt",
+    "sha256": "705c78b9f0f6d5358cd11a02a358a8d6f53c8ee331c5d046d1bb4d083a47163b",
+    "rule": "generic-api-key",
+    "start": 66,
+    "end": 66,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/sociacl.access.decided.v1.json",
+    "source_blob": "de8957e169c7356f7517e93244b387fbd8f3d805"
+  },
+  {
+    "file": "9974a3102f2f988d6a8808d8c745773a8567d585.txt",
+    "sha256": "705c78b9f0f6d5358cd11a02a358a8d6f53c8ee331c5d046d1bb4d083a47163b",
+    "rule": "generic-api-key",
+    "start": 72,
+    "end": 72,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/tokens.used.v1.json",
+    "source_blob": "6fc9f53ea766482ef12cf8bff5891c99c720e889"
+  },
+  {
+    "file": "5138ec6b1cb06ed11a3936a9e0288bf78b89fb32.txt",
+    "sha256": "9cd3c69d3e1028ec030468bcad712a072f4a5dcadf2ce39bec4ac70fd8937d8a",
+    "rule": "generic-api-key",
+    "start": 18,
+    "end": 18,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/auth_events.py",
+    "source_blob": "468082acb9fd62a0f7b48668a5dea8d4880916ba"
+  },
+  {
+    "file": "5138ec6b1cb06ed11a3936a9e0288bf78b89fb32.txt",
+    "sha256": "9cd3c69d3e1028ec030468bcad712a072f4a5dcadf2ce39bec4ac70fd8937d8a",
+    "rule": "generic-api-key",
+    "start": 27,
+    "end": 27,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/tokens_used.py",
+    "source_blob": "94decf475180f54c243e92f97f5e15fe442d35aa"
+  },
+  {
+    "file": "5138ec6b1cb06ed11a3936a9e0288bf78b89fb32.txt",
+    "sha256": "9cd3c69d3e1028ec030468bcad712a072f4a5dcadf2ce39bec4ac70fd8937d8a",
+    "rule": "generic-api-key",
+    "start": 52,
+    "end": 52,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/auth.token.issued.v1.json",
+    "source_blob": "ff0ddc833bcebe5ef64b9350d45653dd34916051"
+  },
+  {
+    "file": "5138ec6b1cb06ed11a3936a9e0288bf78b89fb32.txt",
+    "sha256": "9cd3c69d3e1028ec030468bcad712a072f4a5dcadf2ce39bec4ac70fd8937d8a",
+    "rule": "generic-api-key",
+    "start": 69,
+    "end": 69,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/payment.connect.access.changed.v1.json",
+    "source_blob": "1cdc87d54084ecb47aa7e5ab9f220e1bde1e8e7e"
+  },
+  {
+    "file": "5138ec6b1cb06ed11a3936a9e0288bf78b89fb32.txt",
+    "sha256": "9cd3c69d3e1028ec030468bcad712a072f4a5dcadf2ce39bec4ac70fd8937d8a",
+    "rule": "generic-api-key",
+    "start": 75,
+    "end": 75,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/sociacl.access.decided.v1.json",
+    "source_blob": "de8957e169c7356f7517e93244b387fbd8f3d805"
+  },
+  {
+    "file": "5138ec6b1cb06ed11a3936a9e0288bf78b89fb32.txt",
+    "sha256": "9cd3c69d3e1028ec030468bcad712a072f4a5dcadf2ce39bec4ac70fd8937d8a",
+    "rule": "generic-api-key",
+    "start": 81,
+    "end": 81,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/tokens.used.v1.json",
+    "source_blob": "6fc9f53ea766482ef12cf8bff5891c99c720e889"
+  },
+  {
+    "file": "dc0d4782c79835ac96d996d8a2c2f178ba570846.txt",
+    "sha256": "98d0e00750848c72f71c85fc73d5406d3d7aa19d1dd25c4b318592e17e2a0810",
+    "rule": "generic-api-key",
+    "start": 18,
+    "end": 18,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/auth_events.py",
+    "source_blob": "468082acb9fd62a0f7b48668a5dea8d4880916ba"
+  },
+  {
+    "file": "dc0d4782c79835ac96d996d8a2c2f178ba570846.txt",
+    "sha256": "98d0e00750848c72f71c85fc73d5406d3d7aa19d1dd25c4b318592e17e2a0810",
+    "rule": "generic-api-key",
+    "start": 27,
+    "end": 27,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/tokens_used.py",
+    "source_blob": "94decf475180f54c243e92f97f5e15fe442d35aa"
+  },
+  {
+    "file": "dc0d4782c79835ac96d996d8a2c2f178ba570846.txt",
+    "sha256": "98d0e00750848c72f71c85fc73d5406d3d7aa19d1dd25c4b318592e17e2a0810",
+    "rule": "generic-api-key",
+    "start": 52,
+    "end": 52,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/auth.token.issued.v1.json",
+    "source_blob": "ff0ddc833bcebe5ef64b9350d45653dd34916051"
+  },
+  {
+    "file": "dc0d4782c79835ac96d996d8a2c2f178ba570846.txt",
+    "sha256": "98d0e00750848c72f71c85fc73d5406d3d7aa19d1dd25c4b318592e17e2a0810",
+    "rule": "generic-api-key",
+    "start": 56,
+    "end": 56,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/gateway_api_access_v1.json",
+    "source_blob": "9dab8484f9f9165aeeab0a02c0605da51dd54e0f"
+  },
+  {
+    "file": "dc0d4782c79835ac96d996d8a2c2f178ba570846.txt",
+    "sha256": "98d0e00750848c72f71c85fc73d5406d3d7aa19d1dd25c4b318592e17e2a0810",
+    "rule": "generic-api-key",
+    "start": 70,
+    "end": 70,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/payment.connect.access.changed.v1.json",
+    "source_blob": "1cdc87d54084ecb47aa7e5ab9f220e1bde1e8e7e"
+  },
+  {
+    "file": "dc0d4782c79835ac96d996d8a2c2f178ba570846.txt",
+    "sha256": "98d0e00750848c72f71c85fc73d5406d3d7aa19d1dd25c4b318592e17e2a0810",
+    "rule": "generic-api-key",
+    "start": 76,
+    "end": 76,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/sociacl.access.decided.v1.json",
+    "source_blob": "de8957e169c7356f7517e93244b387fbd8f3d805"
+  },
+  {
+    "file": "dc0d4782c79835ac96d996d8a2c2f178ba570846.txt",
+    "sha256": "98d0e00750848c72f71c85fc73d5406d3d7aa19d1dd25c4b318592e17e2a0810",
+    "rule": "generic-api-key",
+    "start": 82,
+    "end": 82,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/tokens.used.v1.json",
+    "source_blob": "6fc9f53ea766482ef12cf8bff5891c99c720e889"
+  },
+  {
+    "file": "cf7b155f96855d25927672e1311779d764f8f1bd.txt",
+    "sha256": "51246cf08eb6e72127f707749f0fcf8da83de0a5deb6b80c03294495376e3db8",
+    "rule": "generic-api-key",
+    "start": 5171,
+    "end": 5171,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/auth_events.py",
+    "source_blob": "468082acb9fd62a0f7b48668a5dea8d4880916ba"
+  },
+  {
+    "file": "cf7b155f96855d25927672e1311779d764f8f1bd.txt",
+    "sha256": "51246cf08eb6e72127f707749f0fcf8da83de0a5deb6b80c03294495376e3db8",
+    "rule": "generic-api-key",
+    "start": 5179,
+    "end": 5179,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/payloads/tokens_used.py",
+    "source_blob": "94decf475180f54c243e92f97f5e15fe442d35aa"
+  },
+  {
+    "file": "cf7b155f96855d25927672e1311779d764f8f1bd.txt",
+    "sha256": "51246cf08eb6e72127f707749f0fcf8da83de0a5deb6b80c03294495376e3db8",
+    "rule": "generic-api-key",
+    "start": 5204,
+    "end": 5204,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/auth.token.issued.v1.json",
+    "source_blob": "ff0ddc833bcebe5ef64b9350d45653dd34916051"
+  },
+  {
+    "file": "cf7b155f96855d25927672e1311779d764f8f1bd.txt",
+    "sha256": "51246cf08eb6e72127f707749f0fcf8da83de0a5deb6b80c03294495376e3db8",
+    "rule": "generic-api-key",
+    "start": 5221,
+    "end": 5221,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/payment.connect.access.changed.v1.json",
+    "source_blob": "1cdc87d54084ecb47aa7e5ab9f220e1bde1e8e7e"
+  },
+  {
+    "file": "cf7b155f96855d25927672e1311779d764f8f1bd.txt",
+    "sha256": "51246cf08eb6e72127f707749f0fcf8da83de0a5deb6b80c03294495376e3db8",
+    "rule": "generic-api-key",
+    "start": 5226,
+    "end": 5226,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/sociacl.access.decided.v1.json",
+    "source_blob": "de8957e169c7356f7517e93244b387fbd8f3d805"
+  },
+  {
+    "file": "cf7b155f96855d25927672e1311779d764f8f1bd.txt",
+    "sha256": "51246cf08eb6e72127f707749f0fcf8da83de0a5deb6b80c03294495376e3db8",
+    "rule": "generic-api-key",
+    "start": 5232,
+    "end": 5232,
+    "classification": "SHA256 of reachable package source",
+    "source_path": "src/controlplane_events/schemas/tokens.used.v1.json",
+    "source_blob": "6fc9f53ea766482ef12cf8bff5891c99c720e889"
+  }
+]

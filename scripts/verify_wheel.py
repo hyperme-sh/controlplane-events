@@ -25,7 +25,9 @@ with zipfile.ZipFile(wheel) as archive:
     metadata_name, = [name for name in names if name.endswith('.dist-info/METADATA')]
     metadata = BytesParser().parsebytes(archive.read(metadata_name))
     assert metadata['License-Expression'] == 'Apache-2.0'
-    assert metadata.get_all('License-File') == ['LICENSE']
+    assert metadata.get_all('License-File') == ['LICENSE', 'NOTICE']
     license_name = metadata_name.removesuffix('METADATA') + 'licenses/LICENSE'
     assert archive.read(license_name) == (root / 'LICENSE').read_bytes()
+    notice_name = metadata_name.removesuffix('METADATA') + 'licenses/NOTICE'
+    assert archive.read(notice_name) == (root / 'NOTICE').read_bytes()
 print('Wheel runtime and resources match the current source')
