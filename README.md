@@ -369,3 +369,17 @@ v1 approximation or unit conversion is emitted for access. The existing event
 identity, tenant binding, strict payload privacy and atomic dedup rules apply.
 Organization principals use the same opaque subject field, while private actor
 records stay in the serving owner. Events never grant access by themselves.
+
+## Publication preparation
+
+PR and main package checks use fresh home/cache/project environments without
+inherited Git or registry credentials. The existing source, wheel and
+rebuilt-source contracts remain internal validation; normal CI uploads no
+packages or test reports to Actions and retains no release output. Results
+remain in job logs.
+
+Distribution preparation follows FyberLabs/infra#993: GHCR containers, moving
+TEST channels and nightly integration/e2e. Owner/dependency notices, history
+review and GHCR image preparation remain follow-ups. No third-party source
+archives are bundled for redistribution. Event contracts, wire bytes, versions
+and dependency locks are unchanged.
