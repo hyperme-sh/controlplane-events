@@ -326,3 +326,73 @@ def test_cli_rejects_ambiguous_fanout_before_reading_credentials(monkeypatch,arg
     monkeypatch.setattr('sys.argv',['relay','--database-url-file','/unreadable',*arguments])
     with pytest.raises(SystemExit) as error:main()
     assert error.value.code==2
+
+
+@pytest.mark.parametrize("reason", ["starting up", "in recovery mode", "shutting down"])
+def test_database_startup_driver_fallback_is_narrow(reason):
+    import psycopg
+    from sqlalchemy.exc import OperationalError
+    from controlplane_events.http_relay import _database_starting
+    error = OperationalError(None, None, psycopg.OperationalError(
+        'connection failed: FATAL: the database system is '+reason))
+    assert _database_starting(error)
+    for message in ('password authentication failed', 'connection refused',
+                    'the database system is starting up but not a FATAL response'):
+        assert not _database_starting(OperationalError(None, None, psycopg.OperationalError(message)))
+    assert not _database_starting(RuntimeError('FATAL: the database system is starting up'))
+
+
+def test_database_startup_retries_discovery_without_delivering_or_logging_private_values(caplog):
+    from contextlib import contextmanager
+    import psycopg
+    from sqlalchemy.exc import OperationalError
+    error = OperationalError('PRIVATE_SQL', {'password':'PRIVATE_PASSWORD'},
+                             psycopg.errors.CannotConnectNow('PRIVATE_DATABASE'))
+    calls = []
+    class Result:
+        def all(self): return ['tenant']
+    class Engine:
+        attempts = 0
+        @contextmanager
+        def connect(self):
+            self.attempts += 1
+            if self.attempts < 3: raise error
+            yield self
+        def scalars(self, statement): return Result()
+    engine = Engine()
+    sleeps = []
+    run_relay(engine, object(), None, once=False, rounds=3, sleep=sleeps.append,
+              relay=lambda *args: calls.append(args[1]))
+    assert engine.attempts == 3
+    assert calls == ['tenant']
+    assert sleeps == [1, 2]
+    assert 'PRIVATE' not in caplog.text
+
+
+def test_database_startup_transaction_retries_are_bounded_and_once_still_refuses():
+    import psycopg
+    from sqlalchemy.exc import OperationalError
+    from controlplane_events.http_relay import DATABASE_STARTUP_RETRIES
+    error = OperationalError(None, None, psycopg.errors.CannotConnectNow('private'))
+    attempts = []
+    def refuse(*args):
+        attempts.append(args[1])
+        raise error
+    sleeps = []
+    with pytest.raises(OperationalError):
+        run_relay(object(), object(), ['tenant'], once=False, sleep=sleeps.append, relay=refuse)
+    assert len(attempts) == DATABASE_STARTUP_RETRIES + 1
+    assert sleeps == [1, 2, 4, 8, 16, 32]
+    with pytest.raises(OperationalError):
+        run_relay(object(), object(), ['tenant'], once=True, sleep=lambda _: pytest.fail('must not sleep'), relay=refuse)
+
+
+@pytest.mark.parametrize('error_class', ['InvalidPassword', 'InsufficientPrivilege', 'UndefinedTable', 'ConnectionFailure'])
+def test_other_database_errors_fail_immediately(error_class):
+    import psycopg
+    from sqlalchemy.exc import OperationalError
+    error = OperationalError(None, None, getattr(psycopg.errors, error_class)('private'))
+    def refuse(*args): raise error
+    with pytest.raises(OperationalError):
+        run_relay(object(), object(), ['tenant'], once=False, relay=refuse,
+                  sleep=lambda _: pytest.fail('must not retry'))

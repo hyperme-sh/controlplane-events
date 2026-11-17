@@ -228,6 +228,27 @@ def _retry_delay(attempt):
     return min(60.0, float(2 ** exponent))
 
 
+DATABASE_STARTUP_RETRIES = 6
+
+
+def _database_starting(exc):
+    """Only PostgreSQL cannot-connect-now may retry; other DB errors escape."""
+    from sqlalchemy.exc import OperationalError
+    if not isinstance(exc, OperationalError):
+        return False
+    original = exc.orig
+    state = getattr(original, 'sqlstate', None) or getattr(original, 'pgcode', None)
+    if state is not None:
+        return state == '57P03'
+    # libpq connection failures can omit SQLSTATE. Restrict the fallback to the
+    # actual psycopg connection exception and an exact PostgreSQL FATAL reason.
+    import psycopg
+    import re
+    return isinstance(original, psycopg.OperationalError) and re.search(
+        r'(?:^|:\s)FATAL:\s+the database system is (?:starting up|in recovery mode|shutting down)\s*$',
+        str(original), re.MULTILINE) is not None
+
+
 def run_relay(engine, sender, tenants, *, once, sleep=time.sleep, monotonic=time.monotonic,
               relay=None, rounds=None):
     """Deliver each tenant. Temporary receiver failures roll back and back off.
@@ -241,31 +262,45 @@ def run_relay(engine, sender, tenants, *, once, sleep=time.sleep, monotonic=time
     failures = {}
     ready_at = {}
     completed = 0
+    startup_failures = 0
     while rounds is None or completed < rounds:
-        selected = tenants
-        if selected is None:
-            from sqlalchemy import text
-            with engine.connect() as db:
-                selected = db.scalars(text(
-                    "SELECT tenant_id FROM service_tenants ORDER BY tenant_id")).all()
-        now = monotonic()
-        for tenant in selected:
-            if ready_at.get(tenant, 0) > now:
-                continue
-            try:
-                relay(engine, tenant, sender)
-            except TransientDeliveryError as exc:
-                if once:
-                    raise
-                attempt = failures.get(tenant, 0) + 1
-                failures[tenant] = attempt
-                delay = _retry_delay(attempt)
-                ready_at[tenant] = monotonic() + delay
-                logger.warning("temporary event delivery failure for %s; retrying in %.0fs (%s)",
-                               tenant, delay, exc)
-            else:
-                failures.pop(tenant, None)
-                ready_at.pop(tenant, None)
+        try:
+            selected = tenants
+            if selected is None:
+                from sqlalchemy import text
+                with engine.connect() as db:
+                    selected = db.scalars(text(
+                        "SELECT tenant_id FROM service_tenants ORDER BY tenant_id")).all()
+            now = monotonic()
+            for tenant in selected:
+                if ready_at.get(tenant, 0) > now:
+                    continue
+                try:
+                    relay(engine, tenant, sender)
+                except TransientDeliveryError as exc:
+                    if once:
+                        raise
+                    attempt = failures.get(tenant, 0) + 1
+                    failures[tenant] = attempt
+                    delay = _retry_delay(attempt)
+                    ready_at[tenant] = monotonic() + delay
+                    logger.warning("temporary event delivery failure for %s; retrying in %.0fs (%s)",
+                                   tenant, delay, exc)
+                else:
+                    failures.pop(tenant, None)
+                    ready_at.pop(tenant, None)
+            startup_failures = 0
+        except Exception as exc:
+            if once or not _database_starting(exc) or startup_failures >= DATABASE_STARTUP_RETRIES:
+                raise
+            startup_failures += 1
+            completed += 1
+            if rounds is not None and completed >= rounds:
+                return
+            delay = _retry_delay(startup_failures)
+            logger.warning("database is not accepting connections; retrying in %.0fs", delay)
+            sleep(delay)
+            continue
         completed += 1
         if once or (rounds is not None and completed >= rounds):
             return
