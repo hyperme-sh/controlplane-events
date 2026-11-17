@@ -242,7 +242,10 @@ def _database_starting(exc):
         return state == '57P03'
     # libpq connection failures can omit SQLSTATE. Restrict the fallback to the
     # actual psycopg connection exception and an exact PostgreSQL FATAL reason.
-    import psycopg
+    try:
+        import psycopg
+    except ImportError:
+        return False
     import re
     return isinstance(original, psycopg.OperationalError) and re.search(
         r'(?:^|:\s)FATAL:\s+the database system is (?:starting up|in recovery mode|shutting down)\s*$',
