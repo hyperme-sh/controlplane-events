@@ -388,3 +388,20 @@ and dependency locks are unchanged.
 
 The [publication record](docs/publication/README.md) describes owner/dependency
 notices, reachable-history scanning and the prepared GHCR owner image.
+
+### Isolated event canary
+
+`controlplane_events.canary.Binding` is disabled by default. An explicitly enabled
+isolated stream declares its tenant, producer, event type, runtime role, migration
+owner and schema. `snapshot` checks a nonprivileged runtime role, separate schema
+ownership, forced tenant RLS and lack of schema CREATE permission before reading
+pending counts and queue age in a read-only transaction. Empty queues report no
+age; missing, future or inconsistent observations refuse qualification.
+
+`probe` performs one bounded HTTP relay batch on a quiesced synthetic stream.
+Use an engine with a bounded connection timeout and an `HttpEventSender` timeout
+of at most five seconds. Retain its before/after observations and per-attempt
+retry count across worker restarts; these are not cumulative counters. No-progress
+attempts, missing samples and permanent failures cannot report success. Existing
+outbox/inbox transactions retain stable IDs and committed-event deduplication.
+No runtime binding is activated by installing this package.
