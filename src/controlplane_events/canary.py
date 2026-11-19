@@ -54,10 +54,11 @@ def snapshot(engine, binding):
             raise Unavailable('Runtime role has additional role authority')
         relation=db.execute(text("""SELECT n.nspname,pg_get_userbyid(c.relowner),
             c.relrowsecurity,c.relforcerowsecurity,
-            has_schema_privilege(current_user,n.oid,'CREATE') FROM pg_class c
+            has_schema_privilege(current_user,n.oid,'CREATE'),
+            pg_get_userbyid(n.nspowner),has_table_privilege(current_user,c.oid,'TRUNCATE') FROM pg_class c
             JOIN pg_namespace n ON n.oid=c.relnamespace
             WHERE c.oid=to_regclass('service_outbox')""")).one_or_none()
-        if relation is None or tuple(relation)!=(binding.schema,binding.table_owner,True,True,False):
+        if relation is None or tuple(relation)!=(binding.schema,binding.table_owner,True,True,False,binding.table_owner,False):
             raise Unavailable('Unqualified owner outbox')
         policies=db.execute(text("""SELECT policyname,permissive,roles,cmd,qual,with_check
             FROM pg_policies WHERE schemaname=:schema AND tablename='service_outbox'"""),{'schema':binding.schema}).all()

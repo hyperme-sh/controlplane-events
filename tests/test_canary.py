@@ -23,7 +23,7 @@ class Result:
 
 class Engine:
     def __init__(self,rows):
-        self.rows=iter(rows);self.calls=[];self.role=('canary_owner','canary_owner',False,False,False);self.relation=('canary_owner','canary_migration',True,True,False);self.membership=False
+        self.rows=iter(rows);self.calls=[];self.role=('canary_owner','canary_owner',False,False,False);self.relation=('canary_owner','canary_migration',True,True,False,'canary_migration',False);self.membership=False
         expression="(tenant_id = (NULLIF(current_setting('app.current_tenant_id'::text, true), ''::text))::uuid)"
         self.policies=[('service_outbox_tenant','PERMISSIVE',['public'],'ALL',expression,expression)]
     @contextmanager
@@ -118,3 +118,10 @@ def test_relay_transaction_has_its_own_timeouts():
         return 1
     sender=HttpEventSender('http://127.0.0.1:8080/events','fixture',timeout=1)
     assert probe(engine,sender,binding(enabled=True),relay=relay)['delivered']==1
+
+
+@pytest.mark.parametrize('schema_owner,truncate',[('canary_owner',False),('canary_migration',True)])
+def test_schema_owner_or_truncate_authority_refuses(schema_owner,truncate):
+    engine=Engine([])
+    engine.relation=('canary_owner','canary_migration',True,True,False,schema_owner,truncate)
+    with pytest.raises(Unavailable):snapshot(engine,binding(enabled=True))
