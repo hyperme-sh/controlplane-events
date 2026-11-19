@@ -15,16 +15,23 @@ def binding(**kw):
 class Result:
     def __init__(self,row):self.row=row
     def one(self):return self.row
+    def all(self):return self.row
+    def scalar_one(self):return self.row
     def one_or_none(self):return self.row
     def mappings(self):return self
 
 
 class Engine:
-    def __init__(self,rows):self.rows=iter(rows);self.calls=[];self.role=('canary_owner',False,False);self.relation=('canary_owner','canary_migration',True,True,False)
+    def __init__(self,rows):
+        self.rows=iter(rows);self.calls=[];self.role=('canary_owner','canary_owner',False,False,False);self.relation=('canary_owner','canary_migration',True,True,False);self.membership=False
+        expression="(tenant_id = (NULLIF(current_setting('app.current_tenant_id'::text, true), ''::text))::uuid)"
+        self.policies=[('service_outbox_tenant','PERMISSIVE',['public'],'ALL',expression,expression)]
     @contextmanager
     def begin(self):yield self
     def execute(self,sql,params=None):
         query=str(sql);self.calls.append((query,params))
+        if 'SELECT EXISTS' in query:return Result(self.membership)
+        if 'FROM pg_policies' in query:return Result(self.policies)
         if 'FROM pg_roles' in query:return Result(self.role)
         if 'FROM pg_class' in query:return Result(self.relation)
         if 'count(*)' in query:return Result(next(self.rows))
@@ -90,3 +97,24 @@ def test_runtime_cannot_own_or_create_schema_and_no_progress_refuses():
     sender=HttpEventSender('http://127.0.0.1:8080/events','fixture',timeout=1)
     with pytest.raises(Unavailable):
         probe(Engine([row(),row()]),sender,binding(enabled=True),relay=lambda *a,**k:0)
+
+
+def test_assumable_roles_and_permissive_policy_refuse():
+    for field,value in [('membership',True),('role',('admin','canary_owner',False,False,False)),('role',('canary_owner','canary_owner',False,False,True)),('policies',[]),
+                        ('policies',[('service_outbox_tenant','PERMISSIVE',['public'],'ALL','true','true')])]:
+        engine=Engine([]);setattr(engine,field,value)
+        with pytest.raises(Unavailable):snapshot(engine,binding(enabled=True))
+    engine=Engine([]);engine.policies*=2
+    with pytest.raises(Unavailable):snapshot(engine,binding(enabled=True))
+
+
+def test_relay_transaction_has_its_own_timeouts():
+    engine=Engine([row(),row(0,None,None)])
+    def relay(bounded,*args,**kw):
+        before=len(engine.calls)
+        with bounded.begin():
+            assert [q for q,p in engine.calls[before:]]==[
+                "SET LOCAL statement_timeout = '5s'", "SET LOCAL lock_timeout = '1s'"]
+        return 1
+    sender=HttpEventSender('http://127.0.0.1:8080/events','fixture',timeout=1)
+    assert probe(engine,sender,binding(enabled=True),relay=relay)['delivered']==1

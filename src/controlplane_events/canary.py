@@ -1,5 +1,6 @@
 """Inactive, tenant-scoped worker checks for a declared isolated event stream."""
 from dataclasses import dataclass
+from contextlib import contextmanager
 import math
 from uuid import UUID
 from sqlalchemy import text
@@ -45,9 +46,12 @@ def snapshot(engine, binding):
         db.execute(text('SET TRANSACTION READ ONLY'))
         db.execute(text("SET LOCAL statement_timeout = '5s'"))
         db.execute(text("SET LOCAL lock_timeout = '1s'"))
-        role=db.execute(text('SELECT current_user,rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user')).one()
-        if tuple(role)!=(binding.role,False,False):
+        role=db.execute(text('SELECT session_user,current_user,rolsuper,rolbypassrls,rolcreaterole FROM pg_roles WHERE rolname=current_user')).one()
+        if tuple(role)!=(binding.role,binding.role,False,False,False):
             raise Unavailable('Unqualified owner database role')
+        membership=db.execute(text("SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname<>current_user AND pg_has_role(current_user,oid,'MEMBER'))")).scalar_one()
+        if membership:
+            raise Unavailable('Runtime role has additional role authority')
         relation=db.execute(text("""SELECT n.nspname,pg_get_userbyid(c.relowner),
             c.relrowsecurity,c.relforcerowsecurity,
             has_schema_privilege(current_user,n.oid,'CREATE') FROM pg_class c
@@ -55,6 +59,14 @@ def snapshot(engine, binding):
             WHERE c.oid=to_regclass('service_outbox')""")).one_or_none()
         if relation is None or tuple(relation)!=(binding.schema,binding.table_owner,True,True,False):
             raise Unavailable('Unqualified owner outbox')
+        policies=db.execute(text("""SELECT policyname,permissive,roles,cmd,qual,with_check
+            FROM pg_policies WHERE schemaname=:schema AND tablename='service_outbox'"""),{'schema':binding.schema}).all()
+        expected="tenant_id=NULLIFcurrent_setting'app.current_tenant_id',true,''::uuid"
+        def canonical(value):
+            return ''.join((value or '').replace('::text','').replace('(','').replace(')','').split())
+        if (len(policies)!=1 or tuple(policies[0][:4])!=('service_outbox_tenant','PERMISSIVE',['public'],'ALL')
+                or any(canonical(v)!=expected for v in policies[0][4:])):
+            raise Unavailable('Unqualified tenant policy')
         db.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"),{'tenant':str(binding.tenant)})
         row=db.execute(text("""SELECT count(*) AS pending,
             EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP-min(created_at))) AS oldest,
@@ -72,6 +84,18 @@ def snapshot(engine, binding):
         return {'pending':count,'oldest_age_seconds':float(oldest)}
 
 
+class _BoundedEngine:
+    def __init__(self, engine):
+        self.engine=engine
+
+    @contextmanager
+    def begin(self):
+        with self.engine.begin() as db:
+            db.execute(text("SET LOCAL statement_timeout = '5s'"))
+            db.execute(text("SET LOCAL lock_timeout = '1s'"))
+            yield db
+
+
 def probe(engine, sender, binding, *, relay=relay_batch):
     """One bounded attempt; callers retain observations across restart/rollback.
 
@@ -84,7 +108,7 @@ def probe(engine, sender, binding, *, relay=relay_batch):
     if before['pending']==0:raise Unavailable('No declared canary sample')
     retry=False
     try:
-        delivered=relay(engine,binding.tenant,sender,limit=binding.batch_size,event_types=[binding.event_type])
+        delivered=relay(_BoundedEngine(engine),binding.tenant,sender,limit=binding.batch_size,event_types=[binding.event_type])
     except TransientDeliveryError:
         retry=True;delivered=0
     after=snapshot(engine,binding)
