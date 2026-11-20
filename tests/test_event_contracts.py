@@ -106,3 +106,9 @@ def test_sustained_envelope_is_separate_from_the_legacy_protocol():
             validate_event_payload(
                 "aiuditor.envelope.recorded.v2", {**sustained, "measurement": {**measurement, **invalid}},
             )
+    for invalid in (
+        {"decode_tok_s": 1e300}, {"decode_tok_s": 20}, {"context": 131072},
+        {"measurement": {**measurement, "context_prompt_tokens": 131071, "context_generated_tokens": 131071}},
+    ):
+        with pytest.raises(ValidationError):
+            validate_event_payload("aiuditor.envelope.recorded.v2", {**sustained, **invalid})

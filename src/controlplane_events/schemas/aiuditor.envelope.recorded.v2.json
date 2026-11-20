@@ -18,6 +18,7 @@
     },
     "decode_tok_s": {
       "exclusiveMinimum": 0,
+      "maximum": 131072000,
       "type": "number"
     },
     "file_hash": {
