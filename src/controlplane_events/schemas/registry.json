@@ -129,6 +129,11 @@
       "schema": "aiuditor.envelope.recorded.v1.json",
       "status": "existing"
     },
+    "aiuditor.envelope.recorded.v2": {
+      "owner": "aiuditor",
+      "schema": "aiuditor.envelope.recorded.v2.json",
+      "status": "reserved"
+    },
     "aiuditor.policy.created.v1": {
       "owner": "aiuditor",
       "schema": "aiuditor.policy.created.v1.json",

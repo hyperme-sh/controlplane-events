@@ -4,6 +4,7 @@ from __future__ import annotations
 from functools import lru_cache
 from importlib.resources import files
 import json
+import math
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -33,6 +34,16 @@ def _validator(event_type: str) -> Draft202012Validator:
 def validate_event_payload(event_type: str, payload: dict[str, Any]) -> None:
     """Validate JSON wire values with format checking, without coercing or importing owners."""
     _validator(event_type).validate(payload)
+    if event_type == "aiuditor.envelope.recorded.v2":
+        from jsonschema import ValidationError
+
+        measurement = payload["measurement"]
+        if measurement["context_prompt_tokens"] + measurement["context_generated_tokens"] != payload["context"]:
+            raise ValidationError("Measured tokens must span the declared context")
+        expected_rate = measurement["decode_tokens"] * 1000 / measurement["decode_elapsed_ms"]
+        # Permit floating point serialization rounding only.
+        if not math.isclose(payload["decode_tok_s"], expected_rate, rel_tol=1e-9):
+            raise ValidationError("Decode rate does not match measured tokens and time")
     if event_type == "plane.peer.handshaken.v1":
         from datetime import datetime
         from jsonschema import ValidationError

@@ -77,3 +77,38 @@ def test_scoped_token_issuance_accepts_only_declared_scope_fields():
     for extra in ({"scope_manifest_sha256": "invalid"}, {"access_token": "secret"}, {"organization_id": "invalid"}):
         with pytest.raises(ValidationError):
             validate_event_payload("auth.token.issued.v1", dict(organization, **extra))
+
+
+def test_sustained_envelope_is_separate_from_the_legacy_protocol():
+    artifact = "sha256:" + "a" * 64
+    legacy = {
+        "id": str(uuid.uuid4()), "tenant_id": str(uuid.uuid4()),
+        "class_id": "nx-volume", "catalog_id": "core", "file_hash": artifact,
+        "quant": None, "runtime": "nvidia", "context": 16384, "fit": True,
+        "decode_tok_s": 16.0, "thermal_c": None,
+    }
+    measurement = {
+        "image_digest": "ghcr.io/example/runtime@" + artifact,
+        "decode_tokens": 64, "decode_elapsed_ms": 4000,
+        "context_prompt_tokens": 16368, "context_generated_tokens": 16,
+        "context_elapsed_ms": 42000,
+    }
+    sustained = {**legacy, "measurement_protocol": "sustained-decode-v2", "measurement": measurement}
+
+    validate_event_payload("aiuditor.envelope.recorded.v1", legacy)
+    validate_event_payload("aiuditor.envelope.recorded.v2", sustained)
+    with pytest.raises(ValidationError):
+        validate_event_payload("aiuditor.envelope.recorded.v1", sustained)
+    with pytest.raises(ValidationError):
+        validate_event_payload("aiuditor.envelope.recorded.v2", legacy)
+    for invalid in ({"decode_tokens": 3}, {"decode_elapsed_ms": 0}, {"image_digest": "latest"}):
+        with pytest.raises(ValidationError):
+            validate_event_payload(
+                "aiuditor.envelope.recorded.v2", {**sustained, "measurement": {**measurement, **invalid}},
+            )
+    for invalid in (
+        {"decode_tok_s": 1e300}, {"decode_tok_s": 20}, {"context": 131072},
+        {"measurement": {**measurement, "context_prompt_tokens": 131071, "context_generated_tokens": 131071}},
+    ):
+        with pytest.raises(ValidationError):
+            validate_event_payload("aiuditor.envelope.recorded.v2", {**sustained, **invalid})

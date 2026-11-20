@@ -1,0 +1,136 @@
+{
+  "$id": "urn:controlplane:event:aiuditor.envelope.recorded.v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "catalog_id": {
+      "title": "Catalog Id",
+      "type": "string"
+    },
+    "class_id": {
+      "title": "Class Id",
+      "type": "string"
+    },
+    "context": {
+      "maximum": 131072,
+      "minimum": 512,
+      "type": "integer"
+    },
+    "decode_tok_s": {
+      "exclusiveMinimum": 0,
+      "maximum": 131072000,
+      "type": "number"
+    },
+    "file_hash": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "fit": {
+      "const": true
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "measurement": {
+      "additionalProperties": false,
+      "properties": {
+        "context_elapsed_ms": {
+          "maximum": 3600000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "context_generated_tokens": {
+          "maximum": 131071,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "context_prompt_tokens": {
+          "maximum": 131071,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "decode_elapsed_ms": {
+          "maximum": 3600000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "decode_tokens": {
+          "maximum": 131072,
+          "minimum": 64,
+          "type": "integer"
+        },
+        "image_digest": {
+          "maxLength": 256,
+          "pattern": "^(?:[a-z0-9][a-z0-9._:/-]*@)?sha256:[a-f0-9]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_digest",
+        "decode_tokens",
+        "decode_elapsed_ms",
+        "context_prompt_tokens",
+        "context_generated_tokens",
+        "context_elapsed_ms"
+      ],
+      "type": "object"
+    },
+    "measurement_protocol": {
+      "const": "sustained-decode-v2"
+    },
+    "quant": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quant"
+    },
+    "runtime": {
+      "title": "Runtime",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "thermal_c": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Thermal C"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "class_id",
+    "catalog_id",
+    "file_hash",
+    "quant",
+    "runtime",
+    "context",
+    "fit",
+    "decode_tok_s",
+    "thermal_c",
+    "measurement_protocol",
+    "measurement"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.envelope.recorded.v2",
+  "x-owner": "aiuditor",
+  "x-topic": "controlplane.events.v1"
+}
