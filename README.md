@@ -200,6 +200,7 @@ lease state; events only wake reconciliation.
 | `aiuditor.contract.violated.v1` | `aiuditor` | existing | `aiuditor.contract.violated.v1.json` |
 | `aiuditor.envelope.recorded.v1` | `aiuditor` | existing | `aiuditor.envelope.recorded.v1.json` |
 | `aiuditor.envelope.recorded.v2` | `aiuditor` | reserved | `aiuditor.envelope.recorded.v2.json` |
+| `aiuditor.envelope.recorded.v3` | `aiuditor` | reserved | `aiuditor.envelope.recorded.v3.json` |
 | `aiuditor.policy.created.v1` | `aiuditor` | existing | `aiuditor.policy.created.v1.json` |
 | `aiuditor.policy.deleted.v1` | `aiuditor` | existing | `aiuditor.policy.deleted.v1.json` |
 | `aiuditor.suite.member.recorded.v1` | `aiuditor` | existing | `aiuditor.suite.member.recorded.v1.json` |
