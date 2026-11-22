@@ -112,3 +112,38 @@ def test_sustained_envelope_is_separate_from_the_legacy_protocol():
     ):
         with pytest.raises(ValidationError):
             validate_event_payload("aiuditor.envelope.recorded.v2", {**sustained, **invalid})
+
+
+def test_sustained_series_validates_summary_excluding_warmup():
+    artifact = "sha256:" + "a" * 64
+    measurement = {
+        "image_digest": "ghcr.io/example/runtime@" + artifact,
+        "context_prompt_tokens": 496, "context_generated_tokens": 16,
+        "context_elapsed_ms": 1000,
+        "warmup": {"decode_tokens": 64, "decode_elapsed_ms": 1000},
+        "samples": [
+            {"decode_tokens": 64, "decode_elapsed_ms": duration}
+            for duration in (8000, 2000, 4000)
+        ],
+    }
+    summary = {"sample_count": 3, "median_tok_s": 16.0, "spread_tok_s": 24.0, "units": "tokens_per_second"}
+    event = {
+        "id": str(uuid.uuid4()), "tenant_id": str(uuid.uuid4()),
+        "class_id": "nx-volume", "catalog_id": "core", "file_hash": artifact,
+        "quant": None, "runtime": "nvidia", "context": 512, "fit": True,
+        "decode_tok_s": 16.0, "thermal_c": None,
+        "measurement_protocol": "sustained-decode-v3", "measurement": measurement,
+        "measurement_summary": summary,
+    }
+    validate_event_payload("aiuditor.envelope.recorded.v3", event)
+    with pytest.raises(ValidationError):
+        validate_event_payload("aiuditor.envelope.recorded.v2", event)
+    for change in (
+        {"decode_tok_s": 32},
+        {"measurement_summary": {**summary, "spread_tok_s": 56}},
+        {"measurement": {**measurement, "samples": measurement["samples"][:2]}},
+        {"measurement": {**measurement, "warmup": {"decode_tokens": 64.0, "decode_elapsed_ms": 1000}}},
+        {"measurement": {**measurement, "context_prompt_tokens": 495}},
+    ):
+        with pytest.raises(ValidationError):
+            validate_event_payload("aiuditor.envelope.recorded.v3", {**event, **change})

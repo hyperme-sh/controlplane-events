@@ -5,6 +5,7 @@ from functools import lru_cache
 from importlib.resources import files
 import json
 import math
+from statistics import median
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -31,6 +32,17 @@ def _validator(event_type: str) -> Draft202012Validator:
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
+def sustained_series_summary(samples: list[dict[str, int]]) -> dict[str, int | float | str]:
+    """Summarize validated timed repetitions, excluding warm-up."""
+    rates = [sample["decode_tokens"] * 1000 / sample["decode_elapsed_ms"] for sample in samples]
+    return {
+        "sample_count": len(rates),
+        "median_tok_s": median(rates),
+        "spread_tok_s": max(rates) - min(rates),
+        "units": "tokens_per_second",
+    }
+
+
 def validate_event_payload(event_type: str, payload: dict[str, Any]) -> None:
     """Validate JSON wire values with format checking, without coercing or importing owners."""
     _validator(event_type).validate(payload)
@@ -44,6 +56,25 @@ def validate_event_payload(event_type: str, payload: dict[str, Any]) -> None:
         # Permit floating point serialization rounding only.
         if not math.isclose(payload["decode_tok_s"], expected_rate, rel_tol=1e-9):
             raise ValidationError("Decode rate does not match measured tokens and time")
+    if event_type == "aiuditor.envelope.recorded.v3":
+        from jsonschema import ValidationError
+
+        measurement = payload["measurement"]
+        samples = measurement["samples"]
+        raw_counts = [measurement[key] for key in (
+            "context_prompt_tokens", "context_generated_tokens", "context_elapsed_ms",
+        )]
+        raw_counts.extend(value for sample in [measurement["warmup"], *samples] for value in sample.values())
+        if any(type(value) is not int for value in raw_counts) or type(payload["measurement_summary"]["sample_count"]) is not int:
+            raise ValidationError("Measurement counts and durations require JSON integers")
+        if measurement["context_prompt_tokens"] + measurement["context_generated_tokens"] != payload["context"]:
+            raise ValidationError("Measured tokens must span the declared context")
+        expected = sustained_series_summary(samples)
+        if any(
+            not math.isclose(payload["measurement_summary"][key], expected[key], rel_tol=1e-9)
+            for key in ("median_tok_s", "spread_tok_s")
+        ) or not math.isclose(payload["decode_tok_s"], expected["median_tok_s"], rel_tol=1e-9):
+            raise ValidationError("Series summary does not match the measured repetitions")
     if event_type == "plane.peer.handshaken.v1":
         from datetime import datetime
         from jsonschema import ValidationError

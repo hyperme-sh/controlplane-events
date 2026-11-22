@@ -1,0 +1,187 @@
+{
+  "$id": "urn:controlplane:event:aiuditor.envelope.recorded.v3",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "catalog_id": {
+      "title": "Catalog Id",
+      "type": "string"
+    },
+    "class_id": {
+      "title": "Class Id",
+      "type": "string"
+    },
+    "context": {
+      "maximum": 131072,
+      "minimum": 512,
+      "type": "integer"
+    },
+    "decode_tok_s": {
+      "exclusiveMinimum": 0,
+      "maximum": 131072000,
+      "type": "number"
+    },
+    "file_hash": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "fit": {
+      "const": true
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "measurement": {
+      "additionalProperties": false,
+      "properties": {
+        "context_elapsed_ms": {
+          "maximum": 180000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "context_generated_tokens": {
+          "type": "integer",
+          "const": 16
+        },
+        "context_prompt_tokens": {
+          "maximum": 131071,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "image_digest": {
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9._:/-]*@sha256:[a-f0-9]{64}$",
+          "type": "string"
+        },
+        "warmup": {
+          "$ref": "#/$defs/decode_sample"
+        },
+        "samples": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/decode_sample"
+          }
+        }
+      },
+      "required": [
+        "image_digest",
+        "context_prompt_tokens",
+        "context_generated_tokens",
+        "context_elapsed_ms",
+        "warmup",
+        "samples"
+      ],
+      "type": "object"
+    },
+    "measurement_protocol": {
+      "const": "sustained-decode-v3"
+    },
+    "quant": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quant"
+    },
+    "runtime": {
+      "title": "Runtime",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "thermal_c": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Thermal C"
+    },
+    "measurement_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sample_count": {
+          "type": "integer",
+          "const": 3
+        },
+        "median_tok_s": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 64000
+        },
+        "spread_tok_s": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64000
+        },
+        "units": {
+          "const": "tokens_per_second"
+        }
+      },
+      "required": [
+        "sample_count",
+        "median_tok_s",
+        "spread_tok_s",
+        "units"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "class_id",
+    "catalog_id",
+    "file_hash",
+    "quant",
+    "runtime",
+    "context",
+    "fit",
+    "decode_tok_s",
+    "thermal_c",
+    "measurement_protocol",
+    "measurement",
+    "measurement_summary"
+  ],
+  "type": "object",
+  "x-event-type": "aiuditor.envelope.recorded.v3",
+  "x-owner": "aiuditor",
+  "x-topic": "controlplane.events.v1",
+  "$defs": {
+    "decode_sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decode_tokens": {
+          "type": "integer",
+          "const": 64
+        },
+        "decode_elapsed_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120000
+        }
+      },
+      "required": [
+        "decode_tokens",
+        "decode_elapsed_ms"
+      ]
+    }
+  }
+}
