@@ -90,3 +90,21 @@ def test_stable_publisher_binds_the_exact_qualified_image(tmp_path, change):
     else:
         assert result.returncode != 0
         assert not copied.exists() and not summary.exists()
+
+
+@pytest.mark.parametrize("requested,expected", [("v0.1.1", "v0.1.1"), ("0.1.1", "v0.1.1"),
+                                                  ("v0.2.1", None), ("refs/heads/main", None)])
+def test_manual_admission_resolves_only_the_requested_release_tag(tmp_path, requested, expected):
+    workflow = (ROOT / ".github/workflows/release-admission.yml").read_text()
+    resolver = workflow.split("- id: tag", 1)[1].split("- uses: actions/checkout", 1)[0]
+    script = dedent(resolver.split("run: |\n", 1)[1])
+    assert "ref: ${{ steps.tag.outputs.ref || github.sha }}" in workflow
+    output = tmp_path / "output"
+    result = subprocess.run(["bash", "-c", script], env=dict(os.environ, REQUESTED_VERSION=requested,
+                            GITHUB_OUTPUT=str(output)), capture_output=True, text=True, timeout=10)
+    if expected:
+        assert result.returncode == 0, result.stderr
+        assert output.read_text() == f"ref=refs/tags/{expected}\n"
+    else:
+        assert result.returncode != 0
+        assert not output.exists()
