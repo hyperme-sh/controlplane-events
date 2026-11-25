@@ -81,8 +81,9 @@ the original ID and body.
 | `400` | Invalid request shape, invalid `Content-Length`, or the idempotency header does not match the delivery UUID. |
 | `401` | Producer token missing, unknown, or bound to a different producer. |
 | `403` | The authenticated producer does not own the event type. |
-| `409` | The envelope fails the event contract, or the delivery ID already exists with different event data. |
+| `409` | The delivery ID already exists with different event data, or the inbox raises a delivery `ValueError`. |
 | `413` | The delivery exceeds the body limit. |
+| `500` | A registered payload fails JSON Schema validation, or an unexpected receiver error occurs. A `500` carries no commit acknowledgment. |
 
 ## Stored fields
 
