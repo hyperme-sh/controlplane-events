@@ -18,8 +18,20 @@ jobs:
     runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "debrunner"]') || 'ubuntu-24.04' }}
     timeout-minutes: 15
     steps:
+      - id: tag
+        name: Resolve the requested version to its tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=${REQUESTED_VERSION#v}
+          [[ "$version" =~ ^0\.1\.(0|[1-9][0-9]*)$ ]]
+          echo "ref=refs/tags/v$version" >>"$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          ref: ${{ steps.tag.outputs.ref || github.sha }}
           persist-credentials: false
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
