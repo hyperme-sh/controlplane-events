@@ -6,13 +6,43 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Exact release version (for example 0.24.1)
+        description: Exact release version (for example v0.1.1)
         required: true
         type: string
 permissions:
   contents: read
 jobs:
+  runtime-admission:
+    name: Admit the exact 0.1 runtime wheel
+    if: startsWith(github.ref_type == 'tag' && github.ref_name || inputs.version, 'v0.1.') || startsWith(inputs.version, '0.1.')
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "debrunner"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          version: '0.11.26'
+          python-version: '3.13'
+          enable-cache: false
+      - name: Verify the requested version and candidate wheel
+        env:
+          REQUESTED_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=${REQUESTED_VERSION#v}
+          [[ "$version" =~ ^0\.1\.(0|[1-9][0-9]*)$ ]]
+          python3 scripts/check-version-policy.py
+          jq -e --arg version "$version" '
+            .schema_version == 1 and .purpose == "stable-release" and .line == "0.1" and
+            .components["controlplane-events"].version == $version
+          ' releases/candidate/release.json >/dev/null
+          bash scripts/anonymous-command.sh env RELEASE_CANDIDATE_MANIFEST=releases/candidate/release.json \
+            bash scripts/check.sh
   release-admission:
+    if: ${{ !startsWith(github.ref_type == 'tag' && github.ref_name || inputs.version, 'v0.1.') && !startsWith(inputs.version, '0.1.') }}
     uses: hyperme-sh/spanopticon/.github/workflows/component-release.yml@32c064be9fe47e230e0d48d353ada8b38a7c1644
     with:
       release-line: '0.1'

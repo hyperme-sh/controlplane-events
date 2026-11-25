@@ -35,15 +35,21 @@ jobs:
         run: |
           set -euo pipefail
           image="ghcr.io/hyperme-sh/controlplane-events/runtime:preparation-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          python3 selfhost/prepare-runtime.py --wheel "$RELEASE_ARTIFACT_DIR/controlplane_events-0.1.0-py3-none-any.whl" --output "$RELEASE_ARTIFACT_DIR/context"
-          docker build -f Dockerfile --build-arg SOURCE_SHA="$GITHUB_SHA" -t "$image" "$RELEASE_ARTIFACT_DIR/context"
+          wheels=("$RELEASE_ARTIFACT_DIR"/controlplane_events-*-py3-none-any.whl)
+          [[ ${#wheels[@]} == 1 && -f "${wheels[0]}" ]]
+          wheel_name=${wheels[0]##*/}
+          version=${wheel_name#controlplane_events-}
+          version=${version%-py3-none-any.whl}
+          wheel_digest=$(sha256sum "${wheels[0]}" | cut -d' ' -f1)
+          python3 selfhost/prepare-runtime.py --wheel "${wheels[0]}" --output "$RELEASE_ARTIFACT_DIR/context"
+          docker build -f Dockerfile --build-arg PACKAGE_VERSION="$version" --build-arg WHEEL_SHA256="$wheel_digest"             --build-arg SOURCE_SHA="$GITHUB_SHA" -t "$image" "$RELEASE_ARTIFACT_DIR/context"
           python3 - "$image" "$RELEASE_ARTIFACT_DIR/image.json" <<'PYTHON'
           import json, subprocess, sys
           image_id = subprocess.check_output(['docker', 'image', 'inspect', '--format', '{{.Id}}', sys.argv[1]], text=True).strip()
           with open(sys.argv[2], 'w') as stream:
               json.dump({'image': sys.argv[1], 'image_id': image_id}, stream)
           PYTHON
-          python3 selfhost/qualify-runtime.py "$image" --wheel "$RELEASE_ARTIFACT_DIR/controlplane_events-0.1.0-py3-none-any.whl"
+          python3 selfhost/qualify-runtime.py "$image" --wheel "${wheels[0]}"
           bash scripts/check-container.sh "$image"
       - name: Publish qualified current main to moving TEST
         env:

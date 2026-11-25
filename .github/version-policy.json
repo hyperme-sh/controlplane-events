@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "versions": {
-    "pyproject.toml": "0.1.0"
+    "pyproject.toml": "0.1.1"
   },
   "restorations": [
     {
@@ -19,7 +19,7 @@
     "template-service": "0.1.0",
     "payment-service": "0.2.0",
     "aiuditor-service": "0.1.0",
-    "controlplane-events": "0.1.0",
+    "controlplane-events": "0.1.1",
     "operator-ban-store": "0.1.0",
     "user-service": "0.1.0",
     "host-binding-store": "0.1.0",

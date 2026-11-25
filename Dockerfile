@@ -21,7 +21,11 @@ COPY selfhost/entrypoint.py /opt/events-owner/entrypoint.py
 COPY runtime-receipt.json /opt/events-owner/runtime-receipt.json
 ARG SOURCE_SHA
 ARG BUILT_AT
+ARG PACKAGE_VERSION
+ARG WHEEL_SHA256
 LABEL org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${PACKAGE_VERSION}" \
+      io.hyperme.events.wheel-sha256="${WHEEL_SHA256}" \
       org.opencontainers.image.source="https://github.com/hyperme-sh/controlplane-events" \
       org.opencontainers.image.revision="${SOURCE_SHA}"
 ENV GIT_SHA=${SOURCE_SHA} EVENTS_SOURCE_SHA=${SOURCE_SHA} BUILT_AT=${BUILT_AT} PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1

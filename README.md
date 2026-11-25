@@ -35,7 +35,7 @@ python3.13 -m pip install \
   https://github.com/hyperme-sh/controlplane-events/releases/download/v0.24.0/controlplane_events-0.24.0-py3-none-any.whl
 ```
 
-The examples in this README match the source in this repository, whose package version is `0.1.0`. Run them from a checkout so the import matches the files you are reading:
+The examples in this README match the source in this repository, whose package version is `0.1.1`. Run them from a checkout so the import matches the files you are reading:
 
 ```sh
 git clone https://github.com/hyperme-sh/controlplane-events.git
@@ -279,7 +279,7 @@ Preserve schema identifiers and wire bytes when changing an event that other ser
 
 ## Release and versioning
 
-This checkout's package version is `0.1.0` (`pyproject.toml`, release line `0.1`). The accepted stable release is [`v0.24.0`](https://github.com/hyperme-sh/controlplane-events/releases/tag/v0.24.0). Main validation tests the source and discards temporary distribution files. Automatic package prereleases are not published. Stable `vMAJOR.MINOR.PATCH` tags, when used, remain a separate admission path. The `v0.1.0` tag is an unqualified prerelease from a failed admission. Channel rules, artifact records, and tag meanings are in [Releasing](docs/releasing.md).
+This checkout's package version is `0.1.1` (`pyproject.toml`, release line `0.1`). The accepted stable release is [`v0.24.0`](https://github.com/hyperme-sh/controlplane-events/releases/tag/v0.24.0). Main validation tests the source and discards temporary distribution files. Automatic package prereleases are not published. Stable `vMAJOR.MINOR.PATCH` tags, when used, remain a separate admission path. The `v0.1.0` tag is an unqualified prerelease from a failed admission. Channel rules, artifact records, and tag meanings are in [Releasing](docs/releasing.md).
 
 ## License
 
