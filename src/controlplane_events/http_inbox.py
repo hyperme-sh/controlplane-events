@@ -65,7 +65,20 @@ def create_app(*, engine=None, producers=None, forward=None):
     owned_engine=engine is None
     @asynccontextmanager
     async def lifespan(app):
-        app.state.engine=engine or create_engine(normalize_sync_url(Path(os.environ['DATABASE_URL_FILE']).read_text()),pool_pre_ping=True)
+        app.state.engine = engine
+        if owned_engine:
+            options = {"pool_pre_ping": True}
+            raw_limit = os.environ.get("EVENTS_HTTP_DB_CONNECTION_LIMIT")
+            if raw_limit is not None:
+                try:
+                    limit = int(raw_limit)
+                    if limit <= 0 or str(limit) != raw_limit:
+                        raise ValueError
+                except ValueError:
+                    raise ValueError("EVENTS_HTTP_DB_CONNECTION_LIMIT must be a positive integer") from None
+                options.update(pool_size=limit, max_overflow=0)
+            url = Path(os.environ["DATABASE_URL_FILE"]).read_text()
+            app.state.engine = create_engine(normalize_sync_url(url), **options)
         mode=os.environ.get('EVENTS_LEGACY_LOG_FORWARD', '0')
         if mode not in ('0', '1'):
             raise ValueError('EVENTS_LEGACY_LOG_FORWARD must be 0 or 1')

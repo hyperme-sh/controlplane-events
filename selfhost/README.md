@@ -14,7 +14,10 @@ receipt. It refuses public schemas, privileged roles and incomplete or divergent
 receipts. Supply DATABASE_URL_FILE and EVENT_PRODUCER_TOKENS_FILE as readable
 private mounts. The default process serves the authenticated HTTP inbox as UID
 65532. Terminate HTTPS at the existing trusted edge; relays require HTTPS for
-nonloopback destinations.
+nonloopback destinations. Set `EVENTS_HTTP_DB_CONNECTION_LIMIT` to the per-process
+PostgreSQL allowance when the deployment assigns one. The HTTP pool cannot
+borrow overflow connections when the limit is set. An unset value preserves the
+SQLAlchemy defaults.
 
 EVENTS_LEGACY_LOG_FORWARD defaults to 0. Setting exactly 1 enables the fixed
 compatibility append to public.controlplane_events on the inbox transaction.
