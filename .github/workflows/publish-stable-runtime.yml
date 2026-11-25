@@ -1,0 +1,106 @@
+name: Publish stable Events OCI runtime
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact approved stable 0.1 release tag
+        type: string
+        required: true
+      digest:
+        description: Exact qualified OCI manifest digest
+        type: string
+        required: true
+      qualification_run:
+        description: Successful main Events TEST runtime publication run
+        type: string
+        required: true
+      admission_run:
+        description: Successful admission run on the exact version tag
+        type: string
+        required: true
+
+permissions: {}
+concurrency:
+  group: events-stable-runtime-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'hyperme-sh/controlplane-events' && github.ref == 'refs/heads/main'
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "debrunner"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      packages: write
+    steps:
+      - name: Promote the qualified Events runtime without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          DIGEST: ${{ inputs.digest }}
+          QUALIFICATION_RUN: ${{ inputs.qualification_run }}
+          ADMISSION_RUN: ${{ inputs.admission_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^v0\.1\.(0|[1-9][0-9]*)$ && "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "$QUALIFICATION_RUN" =~ ^[1-9][0-9]*$ && "$ADMISSION_RUN" =~ ^[1-9][0-9]*$ ]]
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}/runtime"
+          revision=$(gh api "repos/$GITHUB_REPOSITORY/commits/$VERSION" --jq .sha)
+          [[ "$revision" =~ ^[a-f0-9]{40}$ ]]
+          wheel=$(gh api "repos/$GITHUB_REPOSITORY/contents/releases/candidate/release.json?ref=$revision" --jq .content |
+            base64 -d | jq -er --arg version "${VERSION#v}" '
+              select(.line == "0.1" and .purpose == "stable-release")
+              | .components["controlplane-events"]
+              | select(.version == $version and .artifact.kind == "package") | .artifact.sha256')
+          [[ "$wheel" =~ ^[a-f0-9]{64}$ ]]
+
+          verify_run() {
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$1" | jq -er \
+              --arg revision "$revision" --arg branch "$2" --arg path "$3" '
+                select(.head_sha == $revision and .event == "push" and .head_branch == $branch and .path == $path
+                  and .conclusion == "success" and .head_repository.full_name == .repository.full_name) | .run_attempt'
+          }
+          admission_attempt=$(verify_run "$ADMISSION_RUN" "$VERSION" .github/workflows/release-admission.yml)
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$ADMISSION_RUN/attempts/$admission_attempt/jobs?per_page=100" |
+            jq -es 'any(.[].jobs[]; .name == "Admit the exact 0.1 runtime wheel" and .conclusion == "success")' >/dev/null
+          qualification_attempt=$(verify_run "$QUALIFICATION_RUN" main .github/workflows/ghcr-test.yml)
+          job=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$QUALIFICATION_RUN/attempts/$qualification_attempt/jobs?per_page=100" |
+            jq -ers '.[] | .jobs[] | select(.name == "package" and .conclusion == "success" and
+              any(.steps[]; .name == "Publish qualified current main to moving TEST" and .conclusion == "success")) | .id')
+          [[ "$job" =~ ^[1-9][0-9]*$ ]]
+          gh run view "$QUALIFICATION_RUN" --repo "$GITHUB_REPOSITORY" --job "$job" \
+            --attempt "$qualification_attempt" --log |
+            sed -nE 's/^.*(\{"published":.*\})\r?$/\1/p' |
+            jq -es --arg repo "$repo" --arg revision "$revision" --arg digest "$DIGEST" '
+              length == 1 and .[0].published == ($repo + ":test") and .[0].revision == $revision
+              and (.[0].registry_digests | index($repo + "@" + $digest) != null)' >/dev/null
+
+          export DOCKER_CONFIG
+          DOCKER_CONFIG=$(mktemp -d "$RUNNER_TEMP/events-stable-registry.XXXXXX")
+          trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          manifest_digest() {
+            docker buildx imagetools inspect "$1" --format '{{json .Manifest}}' | jq -er .digest
+          }
+          source="$repo@$DIGEST"
+          docker buildx imagetools inspect "$source" --format '{{json .Image}}' | jq -e \
+            --arg revision "$revision" --arg version "${VERSION#v}" --arg wheel "$wheel" '
+              .config.Labels["org.opencontainers.image.revision"] == $revision and
+              .config.Labels["org.opencontainers.image.version"] == $version and
+              .config.Labels["io.hyperme.events.wheel-sha256"] == $wheel' >/dev/null
+          target="$repo:$VERSION"
+          if docker manifest inspect "$target" >/dev/null 2>"$DOCKER_CONFIG/lookup.err"; then
+            test "$(manifest_digest "$target")" = "$DIGEST"
+          elif [[ "$(cat "$DOCKER_CONFIG/lookup.err")" == "no such manifest: $target" ||
+                    "$(cat "$DOCKER_CONFIG/lookup.err")" == "manifest unknown" ]]; then
+            docker buildx imagetools create --prefer-index=false --tag "$target" "$source"
+          else
+            cat "$DOCKER_CONFIG/lookup.err" >&2
+            exit 1
+          fi
+          test "$(manifest_digest "$target")" = "$DIGEST"
+          jq -cn --arg version "$VERSION" --arg revision "$revision" --arg digest "$DIGEST" \
+            '{version:$version,revision:$revision,digest:$digest}' | tee -a "$GITHUB_STEP_SUMMARY"
